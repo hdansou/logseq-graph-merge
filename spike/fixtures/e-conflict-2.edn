@@ -1,0 +1,6 @@
+;; Spike fixture E2: redefines the same ident as :number, so build-import must return
+;; {:error "...conflict..."}. T3.1 checks whether `logseq graph import` surfaces that error.
+{:properties {:user.property/spike-conflict {:logseq.property/type :number}}
+ :pages-and-blocks
+ [{:page {:block/title "Conflict Page 2"}
+   :blocks [{:block/title "E2 block (must NOT be imported)"}]}]}

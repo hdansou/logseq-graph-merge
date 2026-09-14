@@ -1,0 +1,13 @@
+{
+  "name": "logseq-graph-merge",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "devDependencies": {
+    "@logseq/nbb-logseq": "git+https://github.com/logseq/nbb-logseq.git#feat-db-v34"
+  },
+  "scripts": {
+    "test": "nbb-logseq -cp test -m nextjournal.test-runner",
+    "merge": "nbb-logseq -cp src -m graph-merge.main"
+  }
+}

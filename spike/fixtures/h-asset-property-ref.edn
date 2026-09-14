@@ -1,0 +1,6 @@
+;; Spike fixture H (T3.4): reference an existing asset only through a node property value.
+{:properties {:user.property/spike-attach {:logseq.property/type :node :block/title "spike-attach"}}
+ :pages-and-blocks
+ [{:page {:block/title "Assets Probe"}
+   :blocks [{:block/title "H holds the asset via property"
+             :build/properties {:user.property/spike-attach [:block/uuid #uuid "89352f05-493a-428a-a9f6-d930b4c69e12"]}}]}]}

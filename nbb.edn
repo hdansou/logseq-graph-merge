@@ -1,0 +1,7 @@
+{:paths ["src"]
+ :deps
+ {;; The merge reuses Logseq's own export/import and validation code.
+  ;; Assumes the logseq repo is checked out next to this one.
+  logseq/db {:local/root "../logseq/deps/db"}
+  io.github.nextjournal/nbb-test-runner
+  {:git/sha "b379325cfa5a3306180649da5de3bf5166414e71"}}}

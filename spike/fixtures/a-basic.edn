@@ -1,0 +1,20 @@
+;; Spike fixture A: typical source-graph content.
+;; Unqualified :status/:Fruit keys make the worker mint idents the way the app does.
+{:properties {:status {:logseq.property/type :default}}
+ :classes {:Fruit {} :Company {}}
+ :pages-and-blocks
+ [{:page {:block/title "Apple" :build/tags #{:Fruit}}
+   :blocks [{:block/title "A1 apple block" :build/properties {:status "ripe"}}
+            {:block/title "A2 apple block"}]}
+  {:page {:build/journal 20260910}
+   :blocks [{:block/title "A journal block 1"}
+            {:block/title "A journal block 2"
+             :build/children [{:block/title "A journal child"}]}]}
+  {:page {:block/title "Shared"}
+   :blocks [{:block/title "A ref target"
+             :block/uuid #uuid "a0000000-0000-4000-8000-000000000001"
+             :build/keep-uuid? true}
+            {:block/title "A points at [[a0000000-0000-4000-8000-000000000001]]"}
+            {:block/title "a { color: red; }"
+             :build/properties {:logseq.property.node/display-type :code
+                                :logseq.property.code/lang "css"}}]}]}

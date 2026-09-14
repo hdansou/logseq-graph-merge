@@ -1,0 +1,358 @@
+<title>Logseq Graph Merge Workflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #f4f7f6;
+    --surface: #ffffff;
+    --ink: #17201e;
+    --ink-soft: #4b5a57;
+    --rule: #d3dedb;
+    --accent: #0f6e6a;
+    --accent-wash: #e3f0ee;
+    --decision: #9a6414;
+    --decision-wash: #fbf0dc;
+    --sheet: #fbfcfb;
+    --sheet-rule: #dce5e2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0f1514;
+      --surface: #161e1c;
+      --ink: #e3ebe9;
+      --ink-soft: #9fb0ac;
+      --rule: #2a3633;
+      --accent: #5cc4bb;
+      --accent-wash: #173230;
+      --decision: #e3aa52;
+      --decision-wash: #33280f;
+      --sheet: #f3f6f5;
+      --sheet-rule: #3a4744;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0f1514;
+    --surface: #161e1c;
+    --ink: #e3ebe9;
+    --ink-soft: #9fb0ac;
+    --rule: #2a3633;
+    --accent: #5cc4bb;
+    --accent-wash: #173230;
+    --decision: #e3aa52;
+    --decision-wash: #33280f;
+    --sheet: #f3f6f5;
+    --sheet-rule: #3a4744;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font: 400 16px/1.6 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding-inline: 20px;
+    padding-block: 48px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 56px; }
+  .prose { max-width: 68ch; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; font-weight: 600; }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); letter-spacing: -0.015em; }
+  h2 { font-size: 1.5rem; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; }
+  p { margin: 0; }
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.88em; }
+  code { background: var(--accent-wash); color: var(--ink); padding: 0.05em 0.35em; border-radius: 3px; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  header { display: grid; gap: 14px; }
+  header .lede { color: var(--ink-soft); font-size: 1.08rem; }
+  .meta { color: var(--ink-soft); font-size: 0.82rem; }
+
+  /* Phase rail: the six phases are a real sequence, so they are numbered */
+  .phases {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+    border-top: 2px solid var(--ink);
+  }
+  .phases li { padding: 12px 12px 4px 0; display: grid; gap: 2px; align-content: start; }
+  .phases .n { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 0.75rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .phases .name { font-weight: 600; }
+  .phases .what { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.4; }
+  .phases li.pure .name { color: var(--accent); }
+  .phases li.pure .n::after { content: " · pure"; color: var(--accent); }
+  @media (max-width: 760px) {
+    .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  section { display: grid; gap: 18px; }
+  .section-head { display: grid; gap: 8px; }
+  .section-head p { color: var(--ink-soft); max-width: 68ch; }
+
+  .sheet {
+    background: var(--sheet);
+    border: 1px solid var(--sheet-rule);
+    border-radius: 6px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+  .sheet pre.mermaid { margin: 0; background: transparent; color: #17201e; min-width: 640px; display: flex; justify-content: center; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.82rem; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 14px; height: 10px; border-radius: 2px; border: 1px solid; }
+  .swatch.step { background: #e3f0ee; border-color: #0f6e6a; }
+  .swatch.decide { background: #fbf0dc; border-color: #9a6414; }
+  .swatch.data { background: #eef2f1; border-color: #6b7c78; }
+  .legend .dash { width: 18px; border-top: 2px dashed var(--ink-soft); }
+
+  .table-wrap { overflow-x: auto; border-top: 1px solid var(--rule); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 500; color: var(--ink-soft); font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  td.count { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+
+  .codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 28px; margin: 0; }
+  .codes div { display: grid; grid-template-columns: 3.2em 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: 0.9rem; }
+  .codes dt { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; color: var(--accent); font-weight: 500; }
+  .codes dd { margin: 0; color: var(--ink); }
+
+  .note {
+    background: var(--decision-wash); color: var(--ink);
+    border-left: 3px solid var(--decision);
+    padding: 12px 16px; max-width: 76ch; font-size: 0.94rem;
+  }
+  .note strong { color: var(--decision); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">logseq-graph-merge · design draft</div>
+    <h1>How several DB graphs become one</h1>
+    <p class="lede prose">The merge copies journals onto the same date and appends pages that match an existing one. Tags and properties are reconciled before any content moves, and assets are copied with their checksums verified. Every merge rule lives in a pure planner, so the same sources in the same order always produce the same merged EDN.</p>
+    <p class="meta mono">2026-09-14 · matches the implementation · first verified 5-graph merge</p>
+  </header>
+
+  <ol class="phases" aria-label="Merge phases">
+    <li><span class="n">1</span><span class="name">Preflight</span><span class="what">Sources exist, destination is new, schema versions match</span></li>
+    <li><span class="n">2</span><span class="name">Extract</span><span class="what">Read-only export plus page and asset identity queries</span></li>
+    <li class="pure"><span class="n">3</span><span class="name">Plan</span><span class="what">Eleven stages over data; no I/O</span></li>
+    <li><span class="n">4</span><span class="name">Validate</span><span class="what">In-memory import, plus asset checksums</span></li>
+    <li><span class="n">5</span><span class="name">Write</span><span class="what">Import into a new graph, copy assets</span></li>
+    <li><span class="n">6</span><span class="name">Verify</span><span class="what">Every page has its blocks, assets match, then <code>graph validate</code></span></li>
+  </ol>
+
+  <section id="pipeline">
+    <div class="section-head">
+      <h2>End-to-end pipeline</h2>
+      <p>Nothing is written until the merged EDN passes validation in memory. The count check after import is required: in the spike, <code>graph import</code> rejected an EDN file, wrote nothing, and still exited 0 with “Imported”. The two identity queries exist because the export drops page parents and unreferenced uuids.</p>
+    </div>
+    <div class="sheet"><pre class="mermaid">%%{init: {"theme": "base", "flowchart": {"curve": "basis", "htmlLabels": true}, "themeVariables": {"fontFamily": "IBM Plex Sans, system-ui, sans-serif", "fontSize": "14px", "background": "#fbfcfb", "primaryColor": "#e3f0ee", "primaryBorderColor": "#0f6e6a", "primaryTextColor": "#17201e", "lineColor": "#56655f", "textColor": "#17201e", "clusterBkg": "#f1f5f4", "clusterBorder": "#b8cac6", "titleColor": "#0f6e6a", "edgeLabelBackground": "#fbfcfb", "tertiaryColor": "#f1f5f4"}}}%%
+flowchart TD
+    CMD["merge --sources G1,G2,… --dest D&lt;br/&gt;[--dry-run] [--config-from G]"] --&gt; PRE
+
+    subgraph PRE["1 · Preflight (R2)"]
+        direction TB
+        P1["Every source graph exists"] --&gt; P2["Destination D does not exist"] --&gt; P3["All sources share one schema-version"]
+    end
+
+    PRE --&gt;|any check fails| ABORT(["Abort: nothing written"])
+    PRE --&gt; EXT
+
+    subgraph EXT["2 · Extract: per source, read-only"]
+        direction TB
+        E1["logseq graph export --type edn&lt;br/&gt;:graph-human, :include-timestamps? true"] --&gt; E2["Page identity query:&lt;br/&gt;uuid, title, created-at, parent, order"]
+        E2 --&gt; E4["Asset query:&lt;br/&gt;uuid, checksum, type"]
+        E4 --&gt; E3["Collect config.edn and custom.css&lt;br/&gt;from ::graph-files"]
+    end
+
+    EXT --&gt; PLAN["3 · Plan: pure functions&lt;br/&gt;see §2 Planner stages"]
+    PLAN --&gt; ART[/"merged.edn + report.edn"/]
+    ART --&gt; VAL
+
+    subgraph VAL["4 · Validate (D5)"]
+        direction TB
+        V1["validate-export into an in-memory graph"] --&gt; V2["Every asset file exists&lt;br/&gt;and its SHA-256 matches"]
+    end
+
+    VAL --&gt;|errors| ABORT
+    VAL --&gt; DRY{"--dry-run?"}
+    DRY --&gt;|yes| PRINT(["Stop: merged.edn and report.edn&lt;br/&gt;written, no graph touched"])
+    DRY --&gt;|no| WRITE
+
+    subgraph WRITE["5 · Write"]
+        direction TB
+        W2["logseq graph import --type edn&lt;br/&gt;--input merged.edn --graph D&lt;br/&gt;(creates D)"] --&gt; W3["Copy asset files uuid.ext into D"]
+    end
+
+    WRITE --&gt; VER
+
+    subgraph VER["6 · Verify (D5)"]
+        direction TB
+        C1["Query D: every exported page exists with&lt;br/&gt;at least its blocks; copied asset checksums match"] --&gt; C2["logseq graph validate --graph D"]
+    end
+
+    VER --&gt;|mismatch or invalid| FAIL(["Fail: keep report,&lt;br/&gt;delete D and re-run (D6)"])
+    VER --&gt; DONE(["Done"])
+    classDef decide fill:#fbf0dc,stroke:#9a6414,color:#17201e
+    classDef data fill:#eef2f1,stroke:#6b7c78,color:#17201e
+    class DRY decide
+    class ART data</pre></div>
+  </section>
+
+  <section id="planner">
+    <div class="section-head">
+      <h2>Planner stages</h2>
+      <p>Each stage is a pure function <code>(stage state) → state</code>, run in this order. Dashed arrows show the lookup maps an earlier stage hands to a later one. Every stage also adds its decisions to the shared report, which becomes the <em>Graph Merge</em> page.</p>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="swatch step"></i>Step</span>
+      <span><i class="swatch decide"></i>Decision</span>
+      <span><i class="swatch data"></i>Data in or out</span>
+      <span><i class="dash"></i>Map passed forward</span>
+    </div>
+    <div class="sheet"><pre class="mermaid">%%{init: {"theme": "base", "flowchart": {"curve": "basis", "htmlLabels": true}, "themeVariables": {"fontFamily": "IBM Plex Sans, system-ui, sans-serif", "fontSize": "14px", "background": "#fbfcfb", "primaryColor": "#e3f0ee", "primaryBorderColor": "#0f6e6a", "primaryTextColor": "#17201e", "lineColor": "#56655f", "textColor": "#17201e", "clusterBkg": "#f1f5f4", "clusterBorder": "#b8cac6", "titleColor": "#0f6e6a", "edgeLabelBackground": "#fbfcfb", "tertiaryColor": "#f1f5f4"}}}%%
+flowchart TD
+    IN[/"Source export maps, in source order&lt;br/&gt;+ asset lists + config files"/] --&gt; S1
+
+    S1["S1 · Normalize and recover identities (R2a)&lt;br/&gt;drop ::kv-values, ::property-history&lt;br/&gt;set ::graph-files aside for S9&lt;br/&gt;drop $$$views, Recycle, deleted nodes&lt;br/&gt;union duplicate built-ins in a source&lt;br/&gt;page uuid by (title, created-at), asset uuid by checksum"]
+    S1b["S1b · Values the importer rejects (R2b)&lt;br/&gt;drop empty number values&lt;br/&gt;invalid choices and refs to deleted pages&lt;br/&gt;become 'Property: value' note blocks"]
+    S2["S2 · uuid collisions (R9)&lt;br/&gt;first occurrence keeps its uuid&lt;br/&gt;later ones get uuid-v5(graph, uuid)"]
+    S3["S3 · Unify properties (R3)&lt;br/&gt;see §3"]
+    S4["S4 · Unify tags / classes (R4)&lt;br/&gt;see §3"]
+    S5["S5 · Rewrite idents (R8)&lt;br/&gt;property keys, tags, class-properties,&lt;br/&gt;property-classes, view settings"]
+    S6["S6 · Assets (R10)&lt;br/&gt;force-keep asset uuids&lt;br/&gt;dedupe by checksum: first wins"]
+    S7["S7 · Match and merge pages (R5, R6, R6b, R7)&lt;br/&gt;restore page parents and fresh sibling orders&lt;br/&gt;see §4"]
+    S8["S8 · Rewrite uuid refs (R8)&lt;br/&gt;[[uuid]] and #[[uuid]] in titles&lt;br/&gt;[:block/uuid …] property values"]
+    S9["S9 · Graph Merge page (R12)&lt;br/&gt;per-source config.edn and custom.css code blocks&lt;br/&gt;+ Merge report block"]
+    S10["S10 · Sort and emit (D1, D2)&lt;br/&gt;journals by day, pages by normalized title&lt;br/&gt;blocks keep source order"]
+
+    S1 --&gt; S1b --&gt; S2 --&gt; S3 --&gt; S4 --&gt; S5 --&gt; S6 --&gt; S7 --&gt; S8 --&gt; S9 --&gt; S10
+
+    S2 -.-&gt;|uuid re-key map| S8
+    S3 -.-&gt;|property ident map| S4
+    S3 -.-&gt;|property ident map| S5
+    S4 -.-&gt;|class ident map| S5
+    S6 -.-&gt;|asset uuid map| S8
+    S7 -.-&gt;|page uuid map| S8
+
+    S10 --&gt; OUT[/"merged.edn + report.edn"/]
+    classDef decide fill:#fbf0dc,stroke:#9a6414,color:#17201e
+    classDef data fill:#eef2f1,stroke:#6b7c78,color:#17201e
+    class IN,OUT data</pre></div>
+  </section>
+
+  <section id="ontology">
+    <div class="section-head">
+      <h2>Tags and properties: reconcile first</h2>
+      <p>The same property name gets a different random ident suffix in each graph, so matching goes by title. The first source in the list sets the schema. A later property with a different type or cardinality becomes <code>title (graph)</code> instead of silently colliding.</p>
+    </div>
+    <div class="sheet"><pre class="mermaid">%%{init: {"theme": "base", "flowchart": {"curve": "basis", "htmlLabels": true}, "themeVariables": {"fontFamily": "IBM Plex Sans, system-ui, sans-serif", "fontSize": "14px", "background": "#fbfcfb", "primaryColor": "#e3f0ee", "primaryBorderColor": "#0f6e6a", "primaryTextColor": "#17201e", "lineColor": "#56655f", "textColor": "#17201e", "clusterBkg": "#f1f5f4", "clusterBorder": "#b8cac6", "titleColor": "#0f6e6a", "edgeLabelBackground": "#fbfcfb", "tertiaryColor": "#f1f5f4"}}}%%
+flowchart TD
+    START["All user properties from all sources&lt;br/&gt;(built-in logseq.* idents pass through unchanged)"] --&gt; GRP["Group by normalized title&lt;br/&gt;(trim, case-insensitive)"]
+    GRP --&gt; FIRST["First member by source order is canonical:&lt;br/&gt;its ident, schema and closed values are kept"]
+    FIRST --&gt; NEXT{"Next member&lt;br/&gt;in the group?"}
+    NEXT --&gt;|no| CLS
+    NEXT --&gt;|yes| COMPAT{"Same type and&lt;br/&gt;same cardinality?"}
+    COMPAT --&gt;|yes| MAP["Map member ident to canonical ident&lt;br/&gt;union closed values by title&lt;br/&gt;report other schema differences"]
+    COMPAT --&gt;|no| REN["Rename to 'title (graph)'&lt;br/&gt;new ident derived from title + graph slug&lt;br/&gt;map member ident to new ident; report"]
+    MAP --&gt; NEXT
+    REN --&gt; NEXT
+
+    CLS["All user classes from all sources"] --&gt; CGRP["Group by normalized title"]
+    CGRP --&gt; CFIRST["First member by source order is canonical&lt;br/&gt;map the other idents to it"]
+    CFIRST --&gt; CPROPS["class-properties: ordered union&lt;br/&gt;(after property ident map)"]
+    CPROPS --&gt; CEXT["extends: union of parents"]
+    CEXT --&gt; CYC{"Cycle in extends?"}
+    CYC --&gt;|yes| CFALL["Use the canonical member's extends; report"]
+    CYC --&gt;|no| CDONE(["Ident maps ready for S5"])
+    CFALL --&gt; CDONE
+    classDef decide fill:#fbf0dc,stroke:#9a6414,color:#17201e
+    classDef data fill:#eef2f1,stroke:#6b7c78,color:#17201e
+    class NEXT,COMPAT,CYC decide</pre></div>
+  </section>
+
+  <section id="pages">
+    <div class="section-head">
+      <h2>Page matching</h2>
+      <p>Pages are grouped first and resolved second, so the result does not depend on which source a tagged page came from. Source order only decides which uuid, title spelling and properties win.</p>
+    </div>
+    <div class="sheet"><pre class="mermaid">%%{init: {"theme": "base", "flowchart": {"curve": "basis", "htmlLabels": true}, "themeVariables": {"fontFamily": "IBM Plex Sans, system-ui, sans-serif", "fontSize": "14px", "background": "#fbfcfb", "primaryColor": "#e3f0ee", "primaryBorderColor": "#0f6e6a", "primaryTextColor": "#17201e", "lineColor": "#56655f", "textColor": "#17201e", "clusterBkg": "#f1f5f4", "clusterBorder": "#b8cac6", "titleColor": "#0f6e6a", "edgeLabelBackground": "#fbfcfb", "tertiaryColor": "#f1f5f4"}}}%%
+flowchart TD
+    ALL["All pages from all sources&lt;br/&gt;(after S1–S6)"] --&gt; KIND{"Page kind?"}
+
+    KIND --&gt;|journal| JKEY["Group by journal day (R5)"]
+    JKEY --&gt; JMERGE["One page per day&lt;br/&gt;blocks: source 1, then source 2, …&lt;br/&gt;page properties: first wins"]
+
+    KIND --&gt;|$$$favorites| FAV["Union of favorite links&lt;br/&gt;deduped by target (R7), drops reported"]
+    KIND --&gt;|"tag/property page {:block/uuid}"| DEF["Group by uuid through the&lt;br/&gt;S3/S4 definition uuid map"]
+    DEF --&gt; MAPS
+
+    KIND --&gt;|"page, Contents, Library child"| PKEY["Group by normalized title&lt;br/&gt;+ parent path (R6)"]
+    PKEY --&gt; CLASS{"Top-level page titled like a merged class,&lt;br/&gt;or exactly like a built-in tag/property?"}
+    CLASS --&gt;|yes| TOCLS["Append the page's blocks&lt;br/&gt;to that definition's page (R4)"]
+    CLASS --&gt;|no| SPLIT["Split the group into tagged&lt;br/&gt;and untagged pages"]
+
+    SPLIT --&gt; CLUSTER["Cluster tagged pages whose tag sets overlap&lt;br/&gt;(transitive: A∩B and B∩C puts A, B, C together)"]
+    CLUSTER --&gt; COUNT{"Number of tagged clusters?"}
+    COUNT --&gt;|exactly 1| INTO["Untagged pages join that cluster"]
+    COUNT --&gt;|0 or 2+| OWN["Untagged pages form their own cluster"]
+
+    INTO --&gt; EMIT
+    OWN --&gt; EMIT
+    EMIT["For each cluster, emit one page:&lt;br/&gt;uuid and title from the earliest member&lt;br/&gt;tags: union · properties: first wins&lt;br/&gt;blocks: appended in source order"]
+    EMIT --&gt; SEP["Every emitted page gets an explicit kept :block/uuid&lt;br/&gt;+ :block/parent and a fresh :block/order (R6b)"]
+
+    JMERGE --&gt; MAPS(["page uuid map → S8&lt;br/&gt;merges and clusters → report"])
+    FAV --&gt; MAPS
+    TOCLS --&gt; MAPS
+    SEP --&gt; MAPS
+    classDef decide fill:#fbf0dc,stroke:#9a6414,color:#17201e
+    classDef data fill:#eef2f1,stroke:#6b7c78,color:#17201e
+    class KIND,CLASS,COUNT decide</pre></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Source pages with one title and parent path</th><th>Pages</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><code>Apple</code> (G1), <code>Apple</code> (G2)</td><td class="count">1</td><td>Blocks from G1, then from G2</td></tr>
+          <tr><td><code>Apple #Fruit</code> (G1), <code>Apple</code> (G2)</td><td class="count">1</td><td>One tagged cluster, so the untagged page joins it</td></tr>
+          <tr><td><code>Apple</code> (G1), <code>Apple #Fruit</code> (G2)</td><td class="count">1</td><td>Same result; order doesn't matter</td></tr>
+          <tr><td><code>Apple #Company</code> (G1), <code>Apple #Fruit</code> (G2)</td><td class="count">2</td><td>No shared tags, so they stay separate</td></tr>
+          <tr><td><code>Apple #Company</code>, <code>Apple #Fruit</code>, <code>Apple</code></td><td class="count">3</td><td>Two tagged clusters, so the untagged page stays on its own</td></tr>
+          <tr><td><code>Apple #Fruit</code> (G1), <code>Apple #Fruit #Food</code> (G2)</td><td class="count">1</td><td>Tags overlap; the merged page has both</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="codes">
+    <div class="section-head">
+      <h2>Requirement codes</h2>
+      <p>These codes label the diagrams above. The full text is in <span class="mono">docs/requirements.md</span>.</p>
+    </div>
+    <dl class="codes">
+      <div><dt>R2</dt><dd>Preconditions</dd></div>
+      <div><dt>R2a</dt><dd>Extract and identity recovery</dd></div>
+      <div><dt>R6b</dt><dd>Page tree restoration</dd></div>
+      <div><dt>R3</dt><dd>Property unification</dd></div>
+      <div><dt>R4</dt><dd>Tag (class) unification</dd></div>
+      <div><dt>R5</dt><dd>Journals by date</dd></div>
+      <div><dt>R6</dt><dd>Page grouping and clusters</dd></div>
+      <div><dt>R7</dt><dd>Built-in pages</dd></div>
+      <div><dt>R8</dt><dd>Reference rewriting</dd></div>
+      <div><dt>R9</dt><dd>uuid collisions</dd></div>
+      <div><dt>R10</dt><dd>Assets and checksums</dd></div>
+      <div><dt>R12</dt><dd>Graph Merge review page</dd></div>
+      <div><dt>D1–2</dt><dd>Deterministic output</dd></div>
+      <div><dt>D5</dt><dd>Fail closed</dd></div>
+    </dl>
+    <p class="note"><strong>Spike checked, 2026-09-13.</strong> Probes ran against the installed CLI and worker (<span class="mono">b09316a</span>) on throwaway graphs. Order keys are reproducible, same-title pages with their own uuids stay apart, property-referenced assets keep their uuid, the page tree can be re-attached on import, and review code blocks render in the desktop app.</p>
+  </section>
+</div>

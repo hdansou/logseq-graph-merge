@@ -1,0 +1,5 @@
+;; Spike fixture E1: defines :user.property/spike-conflict as :default (T3.1 setup).
+{:properties {:user.property/spike-conflict {:logseq.property/type :default}}
+ :pages-and-blocks
+ [{:page {:block/title "Conflict Page"}
+   :blocks [{:block/title "E1 block" :build/properties {:user.property/spike-conflict "text"}}]}]}

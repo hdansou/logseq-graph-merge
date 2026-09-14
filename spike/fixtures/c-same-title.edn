@@ -1,0 +1,16 @@
+;; Spike fixture C: two same-title pages with distinct kept uuids and disjoint tags (T3.7),
+;; plus two classes that share a title but have different idents (T3.5).
+{:classes {:user.class/Fruit-spikeaaa {:block/title "Fruit"}
+           :user.class/Fruit-spikebbb {:block/title "Fruit"}
+           :user.class/Company-spike {:block/title "Company"}}
+ :pages-and-blocks
+ [{:page {:block/title "Apple"
+          :block/uuid #uuid "c0000000-0000-4000-8000-00000000000a"
+          :build/keep-uuid? true
+          :build/tags #{:user.class/Fruit-spikeaaa}}
+   :blocks [{:block/title "C apple the fruit"}]}
+  {:page {:block/title "Apple"
+          :block/uuid #uuid "c0000000-0000-4000-8000-00000000000b"
+          :build/keep-uuid? true
+          :build/tags #{:user.class/Company-spike}}
+   :blocks [{:block/title "C apple the company"}]}]}

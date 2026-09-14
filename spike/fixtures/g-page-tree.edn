@@ -1,0 +1,15 @@
+;; Spike fixture G (T3.2 follow-up): can build EDN re-attach the page tree that :graph-human drops?
+;; "Lib Child" goes under the built-in Library page (same uuid in every graph), and "Nested Child" under "Lib Child".
+{:pages-and-blocks
+ [{:page {:block/title "Lib Child"
+          :block/uuid #uuid "90000000-0000-4000-8000-000000000001"
+          :build/keep-uuid? true
+          :block/parent [:block/uuid #uuid "00000004-1294-7765-6000-000000000000"]
+          :block/order "a0"}
+   :blocks [{:block/title "G lib child block"}]}
+  {:page {:block/title "Nested Child"
+          :block/uuid #uuid "90000000-0000-4000-8000-000000000002"
+          :build/keep-uuid? true
+          :block/parent [:block/uuid #uuid "90000000-0000-4000-8000-000000000001"]
+          :block/order "a0"}
+   :blocks [{:block/title "G nested child block"}]}]}
