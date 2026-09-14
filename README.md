@@ -29,6 +29,7 @@ pnpm -s merge --sources "CRM-Simple,GTD-02,Library-Test,Demo-Graph,plugin-test" 
 | `--config-from <graph>` | Copy that source's `logseq/config.edn` and `custom.css`. By default the new graph keeps its own, and every source's files are shown on the `Graph Merge` page. |
 | `--out <dir>` | Working directory. Default `out/<dest>`. |
 | `--root-dir <dir>` | logseq CLI root. Default `~/logseq`. |
+| `GRAPH_MERGE_LOGSEQ_APP=/Applications/<App>.app` (environment variable) | Run that desktop build's CLI instead of the `~/.local/bin/logseq` wrapper. Use the upcoming build for real merges (see [getting started](docs/getting-started.md)). |
 
 What you get in the new graph:
 - journals merged by date;

@@ -186,7 +186,26 @@ Open:
   - a two-graph dry run (`CRM-Simple,Demo-Graph` into `merge-e2e-02`, about 4 s, no graph created);
   - the prerequisites, and what installs the CLI (`src/electron/electron/core.cljs:404`).
   - Found along the way: the CLI is now `f7362f0-dirty`, because each desktop app rewrites `~/.local/bin/logseq` on start (trap 15), so the first end-to-end run used mixed revisions. Also, a server wouldn't start for `Library-Test` ("failed to publish health"); it is recorded as a troubleshooting entry, not diagnosed further.
-- [ ] T5.9 Re-run the five-graph merge once per Logseq build, with every server on that build (stop running servers first), each into a new `merge-e2e-NN`. The user tests two builds: stable `Logseq.app` (`b09316a`) and upcoming `Logseq-DB.app` (`f7362f0-dirty`). The first run mixed them (trap 15). `Library-Test` must be startable first (T5.8).
+- [x] T5.9 Re-run the five-graph merge once per Logseq build, with every server on that build (stop running servers first), each into a new `merge-e2e-NN`. The user tests two builds: stable `Logseq.app` (`b09316a`) and upcoming `Logseq-DB.app` (`f7362f0-dirty`). The first run mixed them (trap 15). The user approved on 2026-09-14.
+  - [x] T5.9a Choose the build without launching a desktop app (tests first; 3 tests):
+    - `GRAPH_MERGE_LOGSEQ_APP=/Applications/<App>.app` makes the tool run `<App>/Contents/MacOS/Logseq <App>/Contents/Resources/app.asar/js/logseq-cli.js` with `ELECTRON_RUN_AS_NODE=1`, the same command the managed wrapper runs;
+    - preflight prints the CLI revision (from `--version`).
+  - [x] T5.9b `Library-Test` starts again with both builds (2026-09-14). The earlier "failed to publish health" was transient. Note: a CLI of one build reuses a server already running on another build, so stop servers before a per-build run.
+  - [x] T5.9c Stable run (`GRAPH_MERGE_LOGSEQ_APP=/Applications/Logseq.app`; all source and destination servers confirmed on `b09316a`):
+    - the dry run passed: 517 pages, 1,969 blocks, 10 assets. `plugin-test` now exports 163 pages, not 161.
+    - **The real import failed:** `Failure(Conflicting upsert: -1 resolves both to 3111 and 3120)`. The tool stopped before copying assets.
+    - Controlled checks on the same `merged.edn`:
+      - upcoming `f7362f0-dirty` CLI into `merge-e2e-03`: **imported** (791 pages, Graph Merge present);
+      - stable CLI directly into `merge-e2e-04`: **same failure, same entity ids**, so it is deterministic;
+      - `b09316a`'s own `deps/db` `build-import` plus transact in memory (`git archive` into the scratchpad, nbb): **ok**, 3,798 tx items.
+    - Conclusion: the defect is in the stable build's *worker* import path, beyond the shared build code, and the upcoming build no longer has it. The in-memory gate can't catch it because it runs master's `deps/db`, not the worker. Not narrowed further (time-boxed); recorded as trap 16.
+    - The empty or diagnostic graphs `merge-e2e-02/03/04` were removed.
+  - [x] T5.9d Upcoming run. **The upcoming build can't open `Library-Test`** (`server-start-timeout-orphan`; the worker log shows `Cannot store nil as a value at {:db/id nil, :block/tx-id …}` from `ensure-canonical-revisions!`, which is also on master). Reproduced twice; stable opens it. This corrects T5.9b, which had called the failure transient; it only seemed to work when a stable server was reused. Recorded as trap 17. So both builds were run on the **4 other sources** (`CRM-Simple,GTD-02,Demo-Graph,plugin-test`), every server confirmed on one build:
+    - upcoming `f7362f0-dirty` into `merge-e2e-05`: **Done** in 31 s (279 pages, 1,420 blocks, 9 assets). Spot-checked: its own graph uuid, no duplicate property or tag titles, 9/9 assets, journal 2025-08-02 with 27 blocks, deleted-page note present.
+    - stable `b09316a` into `merge-e2e-06`: **import failed** with `Conflicting upsert` (2222/2231), so trap 16 doesn't depend on `Library-Test`. The empty graph was removed.
+  - [x] T5.9e Comparison: **both builds export byte-identical EDN** for all 4 sources, so `merged.edn` and `report.edn` are identical too (D1 holds across builds). The only difference is at import. Guidance: run real merges on the upcoming build (getting-started, README, traps 16–17).
+  - [ ] T5.9f The user reviews `merge-e2e-05`, then it is removed
+- [ ] T5.11 Candidate upstream reports, **revalidate before filing** (see memory): (a) the stable `b09316a` worker import `Conflicting upsert` (trap 16), which may already be fixed upstream since the upcoming build imports the file; (b) the upcoming/master startup crash opening `Library-Test` (trap 17). The hypothesis (a `:block/uuid` index entry without an entity) still needs a read-only check of the graph's datoms. Waiting on the user: file, investigate, or leave.
 - [ ] T5.10 Idea, not started: record the CLI revision and each source server's revision in `report.edn`, so every merge shows which build produced it.
 
 Known limits (by design, not started; decide before building):
@@ -223,3 +242,4 @@ Known limits (by design, not started; decide before building):
 - 2026-09-14: Thread recap and docs audit: stale statements corrected (see T4.16). Open items: the user reviews and removes `merge-e2e-01`, and the repo is not under git yet (see T5).
 - 2026-09-14: Added `docs/getting-started.md` (T5.8), verified by a two-graph dry run. Found trap 15: each desktop app rewrites the `logseq` CLI wrapper on start, so the CLI is now `f7362f0-dirty` and the first merge ran on mixed revisions. Added T5.9 to re-run on one revision.
 - 2026-09-14: The user approved `merge-e2e-01` after review; it was removed (T5.1). The user confirmed two Logseq builds are installed on purpose (stable `b09316a`, upcoming `f7362f0-dirty`); trap 15 and T5.9 reworded, T5.10 idea added. Git setup started (T5.2).
+- 2026-09-14: T5.9 done. Build selection via `GRAPH_MERGE_LOGSEQ_APP` (T5.9a, 78 tests). The per-build runs found two Logseq defects: stable `b09316a` rejects merged imports with `Conflicting upsert` (worker-side; the same file imports on upcoming, trap 16), and upcoming/master can't open `Library-Test` (trap 17). 4-source runs: upcoming merged into `merge-e2e-05` and verified; stable failed at import. Exports are byte-identical across builds. Diagnostic graphs `merge-e2e-02/03/04/06` were removed.

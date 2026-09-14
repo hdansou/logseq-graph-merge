@@ -2,12 +2,12 @@
 title: Getting started with logseq-graph-merge
 status: current
 lastVerified: 2026-09-14
-verifiedScope: every command and sample output below was run on this machine on 2026-09-14 (macOS, Node 22.20, pnpm 10.33, babashka 1.12.218, OpenJDK 26, logseq CLI f7362f0-dirty) except where marked
+verifiedScope: every command and sample output below was run on this machine on 2026-09-14 (macOS, Node 22.20, pnpm 10.33, babashka 1.12.218, OpenJDK 26, logseq CLI f7362f0-dirty and b09316a via GRAPH_MERGE_LOGSEQ_APP) except where marked
 ---
 
 # Getting started
 
-This tutorial takes you from a fresh checkout to a verified merge of two Logseq DB graphs. A dry run takes a few seconds; a real merge of five graphs took about two minutes.
+This tutorial takes you from a fresh checkout to a verified merge of Logseq DB graphs. A dry run of two graphs takes a few seconds; a real merge of four graphs took about 30 seconds.
 
 You will:
 1. install and test the tool;
@@ -48,7 +48,7 @@ pnpm test
 The first `pnpm test` prints `Downloading dependencies...` and `Extracting dependencies...` once. It ends with:
 
 ```
-Ran 75 tests containing 197 assertions.
+Ran 78 tests containing 201 assertions.
 0 failures, 0 errors.
 ```
 
@@ -64,6 +64,16 @@ logseq server list      # running servers and their "revision" column
 
 **Know which Logseq build you are using.** The CLI belongs to whichever Logseq desktop app started last. With a stable and an upcoming build installed side by side, launching either one switches the CLI. Servers that are already running keep the revision they were started with. The source graphs must report the same schema version (the tool checks), but mixing builds can still change export behaviour. If `server list` shows different revisions, stop those servers (`logseq server stop --graph <name>`) so they restart on the current build.
 
+**Run on one build on purpose.** To use a specific desktop build without launching it (which would also take over the `logseq` wrapper), set `GRAPH_MERGE_LOGSEQ_APP`. The tool then runs that app's CLI directly, and preflight prints the revision it used:
+
+```sh
+logseq server stop --graph <each source>        # so no source server stays on another build
+GRAPH_MERGE_LOGSEQ_APP=/Applications/Logseq-DB.app pnpm -s merge --sources "..." --dest merge-e2e-05
+# • Preflight ok: 4 sources, schema {:major 65, :minor 33}, logseq CLI f7362f0-dirty
+```
+
+Use the **upcoming build** (`Logseq-DB.app`, `f7362f0-dirty` as of 2026-09-14) for real merges. Stable `b09316a` exports the same data, but its import rejects merged exports (see Troubleshooting).
+
 **Use exact graph names.** Logseq CLI commands silently *create* a graph that doesn't exist. The merge tool checks `graph list` before touching anything, but be careful when running `logseq` commands by hand.
 
 ## 4. Dry-run a merge
@@ -77,10 +87,10 @@ pnpm -s merge --sources "CRM-Simple,Demo-Graph" --dest merge-e2e-02 --dry-run
 - `--sources` is ordered: **the first graph wins** when properties, tags or page properties conflict.
 - `--dest` must be a graph that doesn't exist yet.
 
-Output from the verified run:
+Output from the verified run (the preflight line has printed the CLI revision since T5.9a):
 
 ```
-• Preflight ok: 2 sources, schema {:major 65, :minor 33}
+• Preflight ok: 2 sources, schema {:major 65, :minor 33}, logseq CLI f7362f0-dirty
 • Extracted CRM-Simple: 57 pages, 0 assets
 • Extracted Demo-Graph: 49 pages, 0 assets
 • Planned: {:pages 86, :blocks 623, :properties 15, :classes 8, :assets 0} -> out/merge-e2e-02/merged.edn, report.edn
@@ -117,19 +127,26 @@ The real merge also shows this report on a `Graph Merge` page in the new graph.
 
 ## 6. Run the real merge
 
-When the dry run looks right, run the same command without `--dry-run`:
+When the dry run looks right, run the same command without `--dry-run`, on the upcoming build:
 
 ```sh
-pnpm -s merge --sources "CRM-Simple,GTD-02,Library-Test,Demo-Graph,plugin-test" --dest merge-e2e-01
+GRAPH_MERGE_LOGSEQ_APP=/Applications/Logseq-DB.app \
+  pnpm -s merge --sources "CRM-Simple,GTD-02,Demo-Graph,plugin-test" --dest merge-e2e-05
 ```
 
-It imports into the new graph, copies asset files and verifies the result. The last lines of the verified five-graph run (2026-09-13) were:
+It imports into the new graph, copies asset files and verifies the result. The verified four-graph run (2026-09-14, every server on `f7362f0-dirty`) printed:
 
 ```
-• Validated merged export and 10 asset files
-• Imported into merge-e2e-01 and copied 10 asset files
-• Verified merge-e2e-01: every page has its blocks, assets match, graph validate passed
-• Done: merge-e2e-01
+• Preflight ok: 4 sources, schema {:major 65, :minor 33}, logseq CLI f7362f0-dirty
+• Extracted CRM-Simple: 57 pages, 0 assets
+• Extracted GTD-02: 86 pages, 0 assets
+• Extracted Demo-Graph: 49 pages, 0 assets
+• Extracted plugin-test: 163 pages, 9 assets
+• Planned: {:pages 279, :blocks 1420, :properties 46, :classes 90, :assets 9} -> out/merge-e2e-05/merged.edn, report.edn
+• Validated merged export and 9 asset files
+• Imported into merge-e2e-05 and copied 9 asset files
+• Verified merge-e2e-05: every page has its blocks, assets match, graph validate passed
+• Done: merge-e2e-05
 ```
 
 Verification writes `out/<dest>/verify.edn`. It lists any page missing blocks and any asset file that doesn't match.
@@ -149,7 +166,7 @@ The new graph keeps Logseq's default settings. To use one source's `config.edn` 
 When you're done reviewing, remove the destination from step 6:
 
 ```sh
-logseq graph remove --graph merge-e2e-01
+logseq graph remove --graph merge-e2e-05
 ```
 
 A dry run creates no graph, so it leaves nothing to remove. Delete `out/<dest>/` yourself when you no longer need the exports. To merge again, remove the destination (or pick a new name) and re-run. Merging into an existing graph is not supported.
@@ -161,7 +178,8 @@ A dry run creates no graph, so it leaves nothing to remove. Delete `out/<dest>/`
 | `Source graphs not found: [...]` | Fix the name to match `logseq graph list` exactly. Nothing was touched. |
 | `Destination graph "…" already exists` | Choose a new name, or remove that graph first. |
 | `Sources have different schema versions` | Open each source once in the same Logseq version, then re-run. |
-| `… failed: … server-start-failed … db-worker-node failed to publish health` | The CLI couldn't start a server for that graph. Seen on 2026-09-14 for a graph with no running server, whose database had been written minutes before. Check `logseq server list` and whether a desktop app has the graph open, then retry. |
+| `… failed: … server-start-timeout-orphan` or `… failed to publish health` for one source | That build couldn't start a server for the graph. The real error is in `~/logseq/graphs/<graph>/db-worker-node-<date>.log`. Seen for `Library-Test` on the upcoming build (`Cannot store nil as a value at {:db/id nil, :block/tx-id …}`, requirements trap 17), which stable opens fine. Leave that graph out, or run on a build that opens it. |
+| `logseq graph import … failed: Failure(Conflicting upsert: -1 resolves both to … and …)` | A stable-build (`b09316a`) import defect (requirements trap 16). The same `merged.edn` imports on the upcoming build. The destination was created empty: remove it, then re-run with `GRAPH_MERGE_LOGSEQ_APP=/Applications/Logseq-DB.app`. |
 | `Merged export is invalid, nothing was written: … N validation error(s)` | Some source data can't be imported. First check whether a source is the cause: its own export may already fail (GTD-02 and Demo-Graph do). The spike probe `pnpm exec nbb-logseq -cp src spike/error_summary.cljs out/<dest>/merged.edn` groups the errors by kind, with an example of each. |
 | `Asset files are missing or changed` | An asset file in a source graph's `assets/` folder is gone or differs from its recorded checksum. Nothing was written. |
 | `Destination doesn't match the merge … see out/<dest>/verify.edn` | The import lost data: `graph import` can fail without an error. Remove the destination, check the dry run, and re-run. |
