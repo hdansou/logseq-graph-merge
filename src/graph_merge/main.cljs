@@ -46,7 +46,8 @@
       (when (< 1 (count (set (vals versions))))
         (fail! "Sources have different schema versions; open each in the same Logseq version first"
                {:schema-versions versions}))
-      (step "Preflight ok: " (count sources) " sources, schema " (pr-str (first (vals versions)))))))
+      (step "Preflight ok: " (count sources) " sources, schema " (pr-str (first (vals versions)))
+            ", logseq CLI " (logseq/cli-revision)))))
 
 (defn- extract! [{:keys [sources out]}]
   (mapv (fn [graph]

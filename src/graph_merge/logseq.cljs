@@ -4,16 +4,45 @@
    Graph-scoped commands silently create a missing graph (trap 14): only call them with names
    that `graphs` has confirmed."
   (:require ["child_process" :as child-process]
+            ["path" :as path]
             [clojure.string :as string]
             [graph-merge.io :as io]))
 
 (def ^:private timeout-ms "600000")
 
+(def ^:private app-env-var
+  "Points the tool at one Logseq desktop build instead of the managed `logseq` wrapper,
+   which belongs to whichever desktop app started last (trap 15)."
+  "GRAPH_MERGE_LOGSEQ_APP")
+
+(defn command
+  "The process to spawn for CLI `args`: the managed `logseq` wrapper, or, given a desktop
+   app path, the same Electron command that wrapper would run for that app."
+  [app args]
+  (if (string/blank? app)
+    {:file "logseq" :args (vec args) :env nil}
+    {:file (path/join app "Contents" "MacOS" "Logseq")
+     :args (into [(path/join app "Contents" "Resources" "app.asar" "js" "logseq-cli.js")] args)
+     :env {"ELECTRON_RUN_AS_NODE" "1"}}))
+
+(defn parse-revision [version-output]
+  (second (re-find #"Revision:\s*(\S+)" (str version-output))))
+
+(defn- spawn [args]
+  (let [{:keys [file args env]} (command (aget js/process.env app-env-var) args)]
+    (child-process/spawnSync file (clj->js args)
+                             #js {:encoding "utf8"
+                                  :maxBuffer (* 1024 1024 1024)
+                                  :env (js/Object.assign #js {} js/process.env (clj->js env))})))
+
+(defn cli-revision
+  "The revision of the CLI the tool will run, e.g. \"b09316a\"."
+  []
+  (parse-revision (.-stdout (spawn ["--version"]))))
+
 (defn- run!
   [& args]
-  (let [argv (concat args ["-o" "edn" "--timeout-ms" timeout-ms])
-        result (child-process/spawnSync "logseq" (clj->js argv)
-                                        #js {:encoding "utf8" :maxBuffer (* 1024 1024 1024)})
+  (let [result (spawn (concat args ["-o" "edn" "--timeout-ms" timeout-ms]))
         command (str "logseq " (string/join " " args))]
     (when (or (.-error result) (not= 0 (.-status result)))
       (throw (ex-info (str command " failed: "
