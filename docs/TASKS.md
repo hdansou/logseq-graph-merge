@@ -205,10 +205,11 @@ Open:
     - stable `b09316a` into `merge-e2e-06`: **import failed** with `Conflicting upsert` (2222/2231), so trap 16 doesn't depend on `Library-Test`. The empty graph was removed.
   - [x] T5.9e Comparison: **both builds export byte-identical EDN** for all 4 sources, so `merged.edn` and `report.edn` are identical too (D1 holds across builds). The only difference is at import. Guidance: run real merges on the upcoming build (getting-started, README, traps 16–17).
   - [x] T5.9f The user reviewed `merge-e2e-05`: "looking good", with one issue, tags rendering as `#<uuid>` (see T5.12).
-- [~] T5.11 Upstream reports. **Filed 2026-09-17** (no labels applied; the form adds none):
-  - [db-test#1212](https://github.com/logseq/db-test/issues/1212) — imported tag pages named after the ident (trap 19)
-  - [db-test#1213](https://github.com/logseq/db-test/issues/1213) — `graph export` silently ignores top-level `--edn-options` keys (trap 18)
-  - [ ] still unfiled, **revalidate first**: stable `b09316a` rejecting merged imports with `Conflicting upsert` (trap 16), and the upcoming build failing to open `Library-Test` (trap 17; the "index entry without an entity" explanation is still a hypothesis)
+- [x] T5.11 Upstream reports, all verified against upstream `master` `8e15eeecdf` (2026-09-17) before filing; none of the 29 commits since the running build touch these paths. Filed with no labels (the form applies none):
+  - [db-test#1212](https://github.com/logseq/db-test/issues/1212) — imported tag pages named after the ident (trap 19, `build.cljs:473`)
+  - [db-test#1213](https://github.com/logseq/db-test/issues/1213) — `graph export` silently ignores top-level `--edn-options` keys (trap 18, `graph.ml:404-406`)
+  - [db-test#1214](https://github.com/logseq/db-test/issues/1214) — worker exits at startup when a `:block/uuid` index entry has no entity (trap 17, `db_core.cljs:714-724`)
+  - Not filed by decision: trap 16 (stable `b09316a` rejecting merged imports with `Conflicting upsert`). The upcoming build imports the same file, so it is already fixed in the code maintainers work on.
 - [ ] T5.10 Idea, not started: record the CLI revision and each source server's revision in `report.edn`, so every merge shows which build produced it.
 
 - [x] T5.12 Tags rendering as `#<uuid>` (user report, 2026-09-17). Investigated:
@@ -217,6 +218,8 @@ Open:
   - the user also sees the `#<uuid>` rendering in the source graph, so it is not caused by the merge. **After the fix the user reported the merged graph renders "much better" (2026-09-17)**, so the tag page name does drive the rendering; the source graphs still show it because their own tag pages came from the plugin/app.
 - [x] T5.13 While re-running, exports came back with no timestamps: the newest build moved `:include-timestamps?` under `:graph-options` (trap 18). The tool now sends both shapes and fails loudly if an export has no timestamps. The run aborted safely before writing.
 - [x] T5.14 The user reviewed `merge-e2e-08`: "much better". Both `merge-e2e-05` and `merge-e2e-08` were removed (2026-09-17); none left in `graph list`, on disk or in `server list`.
+
+- [ ] T5.15 `Library-Test` still can't be opened by current builds (3 phantom `:block/uuid` index entries, db-test#1214). If the user wants it back before an upstream fix: try a repair on a copy first, then swap it in. Not started; needs the user's go-ahead because it rewrites a real graph.
 
 Known limits (by design, not started; decide before building):
 - [ ] T5.3 Idents inside query text are reported (`idents-in-text`), not rewritten (R8).
@@ -256,3 +259,4 @@ Known limits (by design, not started; decide before building):
 - 2026-09-17: User reported tags rendering as `#<uuid>` in `merge-e2e-05`. Root-caused to upstream: imported tag pages are named after the EDN key (trap 19), reproduced without merging. Fixed in S10 (emit `:block/name`). The re-run then exposed trap 18 (timestamps option moved in build `6bf8fe7-dirty`), fixed by sending both shapes plus a guard. New verified merge in `merge-e2e-08`; 81 tests. The user confirmed the rendering also happens in the source graph, so it is not merge-related.
 - 2026-09-17: The user confirmed the tag fix ("much better") and both review graphs were removed. No merge-e2e-* graphs remain. Open: T5.11 (file the upstream reports?) and the T5.3-T5.7/T5.10 backlog.
 - 2026-09-17: Filed the two clean upstream bugs as db-test#1212 and #1213, with the investigation included per the user's preference. Filing notes saved to memory.
+- 2026-09-17: Before filing the last report, fetched `upstream` (note: `origin` is the user's fork and was 9 days stale) and confirmed all three bugs are unchanged on `master` `8e15eeecdf`. Filed db-test#1214. Root cause of trap 17 proven read-only on a copy: 3 of 1,215 `:block/uuid` AVET entries have no entity, so the startup backfill builds `{:db/id nil}`. The user's lock-file theory was checked and ruled out (no lock file, no holder). `Library-Test` stays unopenable on new builds until upstream tolerates stale entries or the file is repaired (T5.15). The probe is `spike/check_orphan_datoms.cljs`.
