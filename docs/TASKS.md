@@ -211,9 +211,9 @@ Open:
 - [x] T5.12 Tags rendering as `#<uuid>` (user report, 2026-09-17). Investigated:
   - the block data is **identical** in source and merge: same title with `#[[uuid]]`, same `:block/refs`, same `:block/tags`, and the referenced uuid exists in both;
   - the only difference was the tag page's `:block/name`, which imports set from the ident (`warning-a04sq4ln`). Reproduced by importing one graph's own export, so it is upstream (trap 19). Fixed in S10 by emitting `:block/name`; `merge-e2e-08` now has `warning`/`cite`.
-  - **the user sees the same rendering in the source graph**, so the rendering itself is not caused by the merge and the name fix may not change it. Left to the user (T5.13).
+  - the user also sees the `#<uuid>` rendering in the source graph, so it is not caused by the merge. **After the fix the user reported the merged graph renders "much better" (2026-09-17)**, so the tag page name does drive the rendering; the source graphs still show it because their own tag pages came from the plugin/app.
 - [x] T5.13 While re-running, exports came back with no timestamps: the newest build moved `:include-timestamps?` under `:graph-options` (trap 18). The tool now sends both shapes and fails loudly if an export has no timestamps. The run aborted safely before writing.
-- [ ] T5.14 The user reviews `merge-e2e-08` (4 sources, upcoming build `6bf8fe7-dirty`, correct tag page names), then `merge-e2e-05` and `merge-e2e-08` are removed.
+- [x] T5.14 The user reviewed `merge-e2e-08`: "much better". Both `merge-e2e-05` and `merge-e2e-08` were removed (2026-09-17); none left in `graph list`, on disk or in `server list`.
 
 Known limits (by design, not started; decide before building):
 - [ ] T5.3 Idents inside query text are reported (`idents-in-text`), not rewritten (R8).
@@ -251,3 +251,4 @@ Known limits (by design, not started; decide before building):
 - 2026-09-14: The user approved `merge-e2e-01` after review; it was removed (T5.1). The user confirmed two Logseq builds are installed on purpose (stable `b09316a`, upcoming `f7362f0-dirty`); trap 15 and T5.9 reworded, T5.10 idea added. Git setup started (T5.2).
 - 2026-09-14: T5.9 done. Build selection via `GRAPH_MERGE_LOGSEQ_APP` (T5.9a, 78 tests). The per-build runs found two Logseq defects: stable `b09316a` rejects merged imports with `Conflicting upsert` (worker-side; the same file imports on upcoming, trap 16), and upcoming/master can't open `Library-Test` (trap 17). 4-source runs: upcoming merged into `merge-e2e-05` and verified; stable failed at import. Exports are byte-identical across builds. Diagnostic graphs `merge-e2e-02/03/04/06` were removed.
 - 2026-09-17: User reported tags rendering as `#<uuid>` in `merge-e2e-05`. Root-caused to upstream: imported tag pages are named after the EDN key (trap 19), reproduced without merging. Fixed in S10 (emit `:block/name`). The re-run then exposed trap 18 (timestamps option moved in build `6bf8fe7-dirty`), fixed by sending both shapes plus a guard. New verified merge in `merge-e2e-08`; 81 tests. The user confirmed the rendering also happens in the source graph, so it is not merge-related.
+- 2026-09-17: The user confirmed the tag fix ("much better") and both review graphs were removed. No merge-e2e-* graphs remain. Open: T5.11 (file the upstream reports?) and the T5.3-T5.7/T5.10 backlog.
