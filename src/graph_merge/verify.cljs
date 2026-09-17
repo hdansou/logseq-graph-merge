@@ -25,6 +25,15 @@
        (sort-by (comp str :uuid))
        vec))
 
+(defn timestamps-missing?
+  "True when an export has pages that need (title, created-at) matching but carries no timestamps
+   at all. Some CLI builds ignore :include-timestamps? in one of its shapes (trap 18)."
+  [export]
+  (let [pages (map :page (:pages-and-blocks export))
+        needs-matching (remove #(or (:build/journal %) (:block/uuid %)) pages)]
+    (boolean (and (seq needs-matching)
+                  (not-any? :block/created-at pages)))))
+
 (defn asset-problems
   "Asset files that are missing or whose checksum differs. `checksum-of` takes a file entry."
   [files checksum-of]

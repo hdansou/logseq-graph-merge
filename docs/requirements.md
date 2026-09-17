@@ -1,8 +1,8 @@
 ---
 title: Logseq DB graph merge — requirements and options
 status: draft
-lastVerified: 2026-09-14
-verifiedScope: code reading of logseq master @ d2ab7726ab and build b09316a; live spike probes (§5) against CLI/worker b09316a; the first end-to-end merge (5 graphs into merge-e2e-01) ran on mixed revisions (b09316a source servers, f7362f0-dirty CLI and destination server, trap 15); R2/R12/D4/D5 re-checked against the implementation 2026-09-14
+lastVerified: 2026-09-17
+verifiedScope: code reading of logseq master @ d2ab7726ab and build b09316a; live spike probes (§5) against CLI/worker b09316a; the first end-to-end merge (5 graphs into merge-e2e-01) ran on mixed revisions (b09316a source servers, f7362f0-dirty CLI and destination server, trap 15); R2/R12/D4/D5 re-checked against the implementation 2026-09-14; traps 18-19 found and fixed 2026-09-17 against CLI 6bf8fe7-dirty
 ---
 
 # Logseq DB graph merge: requirements and options
@@ -84,6 +84,8 @@ No graph-merge, page-merge or "import graph into graph" feature exists. The old 
 
     The in-memory `validate-export` gate can't catch it, because it runs the checked-out master `deps/db`, not the worker. Not narrowed further. **Practical rule: run real merges on the upcoming build.** Exports are byte-identical across both builds (T5.9e).
 17. **The upcoming build (and master) can't open `Library-Test`; stable can.** *Confirmed live twice, plus the worker log (`~/logseq/graphs/Library-Test/db-worker-node-20260914.log`):* `db-worker-node failed to start: Cannot store nil as a value at {:db/id nil, :block/tx-id 536885854}` during `on-become-master-start`. The code is `ensure-canonical-revisions!` (`src/main/frontend/worker/db_core.cljs:591` on master, added in `fb1047d1f8` on 2026-07-21, not in `b09316a`). For every `:block/uuid` datom in the `:avet` index it writes `{:db/id (:db/id (d/entity db e)) :block/tx-id …}`, so a nil `:db/id` means that lookup found no entity. *Hypothesis, not verified:* `Library-Test` has an index entry without a matching entity, which stable never touches. The CLI only reports `server-start-timeout-orphan`; the real error is in the graph's worker log.
+18. **`:include-timestamps?` moved under `:graph-options`.** *Confirmed live (2026-09-17), same graph, same command shape:* `b09316a` honours the flat key and ignores the nested one; `6bf8fe7-dirty` (the upcoming build after a self-update) does the opposite. With the wrong shape the export carries **no timestamps at all** (0 of 22 pages), which breaks R2a's (title, created-at) matching and aborts the merge with "unmatched page identity". Sending **both** shapes works on both builds, and that is what `graph-merge.logseq/export-options` does. `verify/timestamps-missing?` now fails the run with a clear message if an export ever comes back without timestamps.
+19. **Imported tag pages are named after the EDN key, not the title.** `build-classes-tx` sets `:block/name` from `(name class-name)` (`build.cljs:473`), and the definition it merges afterwards only overrides `:block/title`. So a suffixed ident like `:user.class/warning-A04sq4Ln` produces the page name `warning-a04sq4ln`, while the app itself would name it `warning`. *Confirmed live (2026-09-17)* by importing one graph's own `:graph-human` export into a new graph, with no merging involved. Properties are unaffected, because `build-properties-tx` passes `:title` to `build-new-property`. The planner now emits `:block/name` for every class (S10), which overrides the default.
 
 ---
 

@@ -17,3 +17,12 @@
   (is (= "f7362f0-dirty"
          (logseq/parse-revision "Build time: 2026-08-26T14:58:45.214Z\nRevision: f7362f0-dirty\n")))
   (is (nil? (logseq/parse-revision "unexpected output"))))
+
+(deftest export-options-ask-for-timestamps-in-both-shapes
+  (testing "b09316a reads :include-timestamps? at the top level; 6bf8fe7-dirty only reads it
+            under :graph-options. Sending both keeps every build exporting timestamps,
+            which R2a needs to match pages by (title, created-at)."
+    (is (= {:export-type :graph-human
+            :include-timestamps? true
+            :graph-options {:include-timestamps? true}}
+           logseq/export-options))))

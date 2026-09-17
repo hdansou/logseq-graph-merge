@@ -34,3 +34,14 @@
     (is (= [{:graph "A" :uuid #uuid "a0000000-0000-4000-8000-000000000002" :problem :checksum-mismatch}
             {:graph "B" :uuid #uuid "a0000000-0000-4000-8000-000000000003" :problem :missing-file}]
            (verify/asset-problems files (comp checksum-of :uuid))))))
+
+(deftest missing-timestamps-are-detected
+  (testing "an export without timestamps can't be matched by (title, created-at) (R2a)"
+    (let [with-times {:pages-and-blocks [{:page {:block/title "A" :block/created-at 1}}
+                                         {:page {:build/journal 20260101}}]}
+          without {:pages-and-blocks [{:page {:block/title "A"}}
+                                      {:page {:block/title "B" :block/uuid page-uuid}}]}]
+      (is (false? (verify/timestamps-missing? with-times)))
+      (is (true? (verify/timestamps-missing? without)))
+      (testing "an export whose pages all kept uuids needs no timestamps"
+        (is (false? (verify/timestamps-missing? {:pages-and-blocks [{:page {:block/title "B" :block/uuid page-uuid}}]})))))))

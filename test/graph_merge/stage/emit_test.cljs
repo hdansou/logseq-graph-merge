@@ -28,3 +28,14 @@
     (testing "graph files are only included for --config-from"
       (is (not (contains? (emit/emit base) ::sqlite-export/graph-files)))
       (is (= files (::sqlite-export/graph-files (emit/emit (assoc base :graph-files files))))))))
+
+(deftest classes-carry-a-page-name-derived-from-their-title
+  (testing "sqlite.build names a tag page after the EDN key (build.cljs:473), so a suffixed ident
+            would name it 'warning-a04sq4ln' and its #[[uuid]] references stop rendering"
+    (let [export (emit/emit {:pages-and-blocks [] :properties {}
+                             :classes {:user.class/warning-A04sq4Ln {:block/title "Warning"}}})]
+      (is (= "warning" (get-in export [:classes :user.class/warning-A04sq4Ln :block/name])))))
+  (testing "a name already in the definition is kept"
+    (let [export (emit/emit {:pages-and-blocks [] :properties {}
+                             :classes {:user.class/c {:block/title "C" :block/name "kept"}}})]
+      (is (= "kept" (get-in export [:classes :user.class/c :block/name]))))))

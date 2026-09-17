@@ -15,6 +15,14 @@
    which belongs to whichever desktop app started last (trap 15)."
   "GRAPH_MERGE_LOGSEQ_APP")
 
+(def export-options
+  "Options for `graph export`. `:include-timestamps?` is sent twice on purpose: b09316a reads it
+   at the top level, while 6bf8fe7-dirty only reads it under :graph-options. R2a needs the
+   timestamps to match pages by (title, created-at)."
+  {:export-type :graph-human
+   :include-timestamps? true
+   :graph-options {:include-timestamps? true}})
+
 (defn command
   "The process to spawn for CLI `args`: the managed `logseq` wrapper, or, given a desktop
    app path, the same Electron command that wrapper would run for that app."
@@ -62,7 +70,7 @@
 
 (defn export-graph! [graph file]
   (run! "graph" "export" "--graph" graph "--type" "edn" "--file" file
-        "--edn-options" "{:export-type :graph-human :include-timestamps? true}"))
+        "--edn-options" (pr-str export-options)))
 
 (defn query [graph query-edn]
   (:result (run! "query" "--graph" graph "--query" query-edn)))

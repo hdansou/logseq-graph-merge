@@ -65,6 +65,11 @@
                                                      :checksum (:logseq.property.asset/checksum r)
                                                      :type (:logseq.property.asset/type r)})
                                             (logseq/query graph asset-rows-query))}]
+              (when (verify/timestamps-missing? (:export source))
+                (fail! (str "Export of " graph " has no timestamps, so pages can't be matched. "
+                            "The CLI build may ignore :include-timestamps? in the shape sent; "
+                            "see requirements trap 18.")
+                       {:graph graph}))
               (step "Extracted " graph ": " (count (get-in source [:export :pages-and-blocks])) " pages, "
                     (count (:asset-rows source)) " assets")
               source)))

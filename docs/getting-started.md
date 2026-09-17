@@ -1,7 +1,7 @@
 ---
 title: Getting started with logseq-graph-merge
 status: current
-lastVerified: 2026-09-14
+lastVerified: 2026-09-17
 verifiedScope: every command and sample output below was run on this machine on 2026-09-14 (macOS, Node 22.20, pnpm 10.33, babashka 1.12.218, OpenJDK 26, logseq CLI f7362f0-dirty and b09316a via GRAPH_MERGE_LOGSEQ_APP) except where marked
 ---
 
@@ -180,6 +180,7 @@ A dry run creates no graph, so it leaves nothing to remove. Delete `out/<dest>/`
 | `Sources have different schema versions` | Open each source once in the same Logseq version, then re-run. |
 | `… failed: … server-start-timeout-orphan` or `… failed to publish health` for one source | That build couldn't start a server for the graph. The real error is in `~/logseq/graphs/<graph>/db-worker-node-<date>.log`. Seen for `Library-Test` on the upcoming build (`Cannot store nil as a value at {:db/id nil, :block/tx-id …}`, requirements trap 17), which stable opens fine. Leave that graph out, or run on a build that opens it. |
 | `logseq graph import … failed: Failure(Conflicting upsert: -1 resolves both to … and …)` | A stable-build (`b09316a`) import defect (requirements trap 16). The same `merged.edn` imports on the upcoming build. The destination was created empty: remove it, then re-run with `GRAPH_MERGE_LOGSEQ_APP=/Applications/Logseq-DB.app`. |
+| `Export of <graph> has no timestamps, so pages can't be matched` | The CLI build ignored `:include-timestamps?`. The tool sends both accepted shapes (requirements trap 18); if a newer build changes it again, check what `logseq graph export … --edn-options` returns. |
 | `Merged export is invalid, nothing was written: … N validation error(s)` | Some source data can't be imported. First check whether a source is the cause: its own export may already fail (GTD-02 and Demo-Graph do). The spike probe `pnpm exec nbb-logseq -cp src spike/error_summary.cljs out/<dest>/merged.edn` groups the errors by kind, with an example of each. |
 | `Asset files are missing or changed` | An asset file in a source graph's `assets/` folder is gone or differs from its recorded checksum. Nothing was written. |
 | `Destination doesn't match the merge … see out/<dest>/verify.edn` | The import lost data: `graph import` can fail without an error. Remove the destination, check the dry run, and re-run. |
