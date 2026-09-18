@@ -45,6 +45,7 @@ The same report is written to `out/<dest>/report.edn`. The tool stops before wri
 - [docs/requirements.md](docs/requirements.md): requirements, traps found in Logseq, options, spike results and the decisions log
 - [docs/merge-workflow.md](docs/merge-workflow.md): workflow diagrams (source of truth for the [rendered page](https://claude.ai/code/artifact/fc366529-6a4c-49da-a996-85be42363d14))
 - [docs/TASKS.md](docs/TASKS.md): task tracker and progress log
+- [docs/library-test-investigation.md](docs/library-test-investigation.md): open Logseq-side investigation (a graph that current builds can't open, db-test#1214)
 
 ## Layout
 | Path | What |

@@ -219,7 +219,7 @@ Open:
 - [x] T5.13 While re-running, exports came back with no timestamps: the newest build moved `:include-timestamps?` under `:graph-options` (trap 18). The tool now sends both shapes and fails loudly if an export has no timestamps. The run aborted safely before writing.
 - [x] T5.14 The user reviewed `merge-e2e-08`: "much better". Both `merge-e2e-05` and `merge-e2e-08` were removed (2026-09-17); none left in `graph list`, on disk or in `server list`.
 
-- [ ] T5.15 `Library-Test` still can't be opened by current builds (3 phantom `:block/uuid` index entries, db-test#1214). If the user wants it back before an upstream fix: try a repair on a copy first, then swap it in. Not started; needs the user's go-ahead because it rewrites a real graph.
+- [ ] T5.15 `Library-Test` still can't be opened by current builds (3 phantom `:block/uuid` index entries, db-test#1214). **Next session starts here:** see [library-test-investigation.md](library-test-investigation.md) for the confirmed root cause, the phantom entries, the read-only probe command and the open questions. Any repair runs on a copy first and needs the user's go-ahead plus a backup.
 
 Known limits (by design, not started; decide before building):
 - [ ] T5.3 Idents inside query text are reported (`idents-in-text`), not rewritten (R8).
@@ -260,3 +260,4 @@ Known limits (by design, not started; decide before building):
 - 2026-09-17: The user confirmed the tag fix ("much better") and both review graphs were removed. No merge-e2e-* graphs remain. Open: T5.11 (file the upstream reports?) and the T5.3-T5.7/T5.10 backlog.
 - 2026-09-17: Filed the two clean upstream bugs as db-test#1212 and #1213, with the investigation included per the user's preference. Filing notes saved to memory.
 - 2026-09-17: Before filing the last report, fetched `upstream` (note: `origin` is the user's fork and was 9 days stale) and confirmed all three bugs are unchanged on `master` `8e15eeecdf`. Filed db-test#1214. Root cause of trap 17 proven read-only on a copy: 3 of 1,215 `:block/uuid` AVET entries have no entity, so the startup backfill builds `{:db/id nil}`. The user's lock-file theory was checked and ruled out (no lock file, no holder). `Library-Test` stays unopenable on new builds until upstream tolerates stale entries or the file is repaired (T5.15). The probe is `spike/check_orphan_datoms.cljs`.
+- 2026-09-18: Thread recap. Wrote `docs/library-test-investigation.md` as the resume note for T5.15; the next session continues there.
