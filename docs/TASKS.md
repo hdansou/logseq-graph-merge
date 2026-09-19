@@ -1,6 +1,7 @@
 # Tasks
 
 Rules:
+
 - Every feature, change or bug fix gets its tasks listed here **before** work starts.
 - Code is built TDD: failing test, then pass, then refactor. Keep it DRY and KISS.
 - Docs are updated in the same step as the code.
@@ -8,10 +9,12 @@ Rules:
 Status: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ## T1 Requirements and options doc
+
 - [x] T1.1 Research the Logseq export/import, identity rules and CLI surface
 - [x] T1.2 Write `docs/requirements.md` (requirements, traps, options, decisions)
 
 ## T2 Merge workflow diagram
+
 - [x] T2.1 Write `docs/merge-workflow.md`: the end-to-end pipeline, planner stages, page-matching and ontology decision diagrams (Mermaid)
 - [x] T2.2 Publish a rendered view of the diagrams for review: https://claude.ai/code/artifact/fc366529-6a4c-49da-a996-85be42363d14
   - The page is built from the Mermaid blocks in `docs/merge-workflow.md` by `python3 scripts/build_workflow_page.py`, which writes `docs/site/merge-workflow.html` from `docs/site/merge-workflow.template.html`. Rebuild and republish whenever the diagrams change.
@@ -19,7 +22,9 @@ Status: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] T2.4 Update R6 to group-then-resolve (found while diagramming), and remove R4's class rename case
 
 ## T3 Spike: confirm the unverified behaviour (requirements §5)
+
 Scope and safety:
+
 - Probes run only against throwaway local graphs named `merge-spike-*`, created and removed with the `logseq` CLI.
 - Existing graphs are only exported, never written. `cliworker` is synced, so nothing is imported into it.
 - Record the CLI and worker revision, since the installed desktop build may differ from master.
@@ -44,11 +49,14 @@ Full results table: `docs/requirements.md` §5.
 - [x] T3.12 Checked the code block by eye: in `merge-spike-a`, page `Shared`, the CSS block renders as a code block in the desktop app (confirmed by the user, 2026-09-13).
 
 ## T4 Build the tool
+
 The user approved the stack on 2026-09-13 (requirements §4, Option B):
+
 - a pure planner in ClojureScript under nbb-logseq, depending on the local logseq repo's `deps/db`;
 - a thin I/O shell that shells out to the `logseq` CLI.
 
 **Graph scope for development (set by the user, 2026-09-13):**
+
 - Only `CRM-Simple`, `Bafigo`, `Library-Test`, `Demo-Graph`, `GTD-02`, `cliworker`, `plugin-test`, `do-sync` and `test-rtc` may be exported, queried or otherwise used.
 - `cliworker`, `do-sync` and `test-rtc` are synced, so they are read-only.
 - Creating any destination graph needs the user's confirmation first.
@@ -174,9 +182,11 @@ Setup is copied from `logseq/deps/db`, not invented: same `@logseq/nbb-logseq` g
 - [x] T4.16 Docs: README usage, requirements R2b and blank titles, workflow S1b, page republished (version 5). Recap audit 2026-09-14 corrected R2 (schema check across sources, graph list first), R12 (actual report sections), D4/D5 (the post-import checks as built), the workflow verify step, and the `lastVerified` dates.
 
 ## T5 Open items and backlog
+
 Tracked here so nothing lives only in the chat.
 
 Open:
+
 - [x] T5.1 The user reviewed `merge-e2e-01` and approved it, and it was removed (2026-09-14).
 - [x] T5.2 Put `logseq-graph-merge` under git (the user approved it on 2026-09-14). No remote; it stays local.
   - [x] `.gitignore` keeps `out/`, `spike/out/`, `node_modules/` and `.nbb/` (138 MB cache) out, because the `out/` folders hold exports of personal graphs
@@ -198,7 +208,7 @@ Open:
       - upcoming `f7362f0-dirty` CLI into `merge-e2e-03`: **imported** (791 pages, Graph Merge present);
       - stable CLI directly into `merge-e2e-04`: **same failure, same entity ids**, so it is deterministic;
       - `b09316a`'s own `deps/db` `build-import` plus transact in memory (`git archive` into the scratchpad, nbb): **ok**, 3,798 tx items.
-    - Conclusion: the defect is in the stable build's *worker* import path, beyond the shared build code, and the upcoming build no longer has it. The in-memory gate can't catch it because it runs master's `deps/db`, not the worker. Not narrowed further (time-boxed); recorded as trap 16.
+    - Conclusion: the defect is in the stable build's _worker_ import path, beyond the shared build code, and the upcoming build no longer has it. The in-memory gate can't catch it because it runs master's `deps/db`, not the worker. Not narrowed further (time-boxed); recorded as trap 16.
     - The empty or diagnostic graphs `merge-e2e-02/03/04` were removed.
   - [x] T5.9d Upcoming run. **The upcoming build can't open `Library-Test`** (`server-start-timeout-orphan`; the worker log shows `Cannot store nil as a value at {:db/id nil, :block/tx-id …}` from `ensure-canonical-revisions!`, which is also on master). Reproduced twice; stable opens it. This corrects T5.9b, which had called the failure transient; it only seemed to work when a stable server was reused. Recorded as trap 17. So both builds were run on the **4 other sources** (`CRM-Simple,GTD-02,Demo-Graph,plugin-test`), every server confirmed on one build:
     - upcoming `f7362f0-dirty` into `merge-e2e-05`: **Done** in 31 s (279 pages, 1,420 blocks, 9 assets). Spot-checked: its own graph uuid, no duplicate property or tag titles, 9/9 assets, journal 2025-08-02 with 27 blocks, deleted-page note present.
@@ -223,6 +233,7 @@ Open:
   - Still open, parked by the user: adding the new evidence to db-test#1214, and reporting `test-rtc`'s SQLite-level corruption upstream (a separate bug; the graph itself was restored from a backup on 2026-09-18, but its sync is deliberately still stopped).
 
 Known limits (by design, not started; decide before building):
+
 - [ ] T5.3 Idents inside query text are reported (`idents-in-text`), not rewritten (R8).
 - [ ] T5.4 Uuids of unreferenced blocks can change between runs (D3); uuid-v5 for every block is a possible extension.
 - [ ] T5.5 `graph import` gives no error text on rejection (trap 6). Option D (calling `/v1/invoke` directly) would surface it; today the `validate-export` gate catches problems first.
@@ -230,6 +241,7 @@ Known limits (by design, not started; decide before building):
 - [ ] T5.7 Not yet seen in real data, so not handled: favorites linking to deleted pages, and empty-placeholder values on types other than `:number`. The validation gate would stop the merge if they appear.
 
 ## Progress log
+
 - 2026-09-13: T1 done. Requirements doc drafted from code reading of logseq @ `d2ab7726ab`.
 - 2026-09-13: T2 started.
 - 2026-09-13: Found while diagramming: resolving pages one at a time made the untagged-page rule depend on source order. R6 now groups pages by title and parent path, then resolves each group, with transitive tag-overlap clusters. R4's class rename case was removed because classes have no type or cardinality to conflict on. The requirements doc and decisions log are updated.
@@ -258,18 +270,18 @@ Known limits (by design, not started; decide before building):
 - 2026-09-14: The user approved `merge-e2e-01` after review; it was removed (T5.1). The user confirmed two Logseq builds are installed on purpose (stable `b09316a`, upcoming `f7362f0-dirty`); trap 15 and T5.9 reworded, T5.10 idea added. Git setup started (T5.2).
 - 2026-09-14: T5.9 done. Build selection via `GRAPH_MERGE_LOGSEQ_APP` (T5.9a, 78 tests). The per-build runs found two Logseq defects: stable `b09316a` rejects merged imports with `Conflicting upsert` (worker-side; the same file imports on upcoming, trap 16), and upcoming/master can't open `Library-Test` (trap 17). 4-source runs: upcoming merged into `merge-e2e-05` and verified; stable failed at import. Exports are byte-identical across builds. Diagnostic graphs `merge-e2e-02/03/04/06` were removed.
 - 2026-09-17: User reported tags rendering as `#<uuid>` in `merge-e2e-05`. Root-caused to upstream: imported tag pages are named after the EDN key (trap 19), reproduced without merging. Fixed in S10 (emit `:block/name`). The re-run then exposed trap 18 (timestamps option moved in build `6bf8fe7-dirty`), fixed by sending both shapes plus a guard. New verified merge in `merge-e2e-08`; 81 tests. The user confirmed the rendering also happens in the source graph, so it is not merge-related.
-- 2026-09-17: The user confirmed the tag fix ("much better") and both review graphs were removed. No merge-e2e-* graphs remain. Open: T5.11 (file the upstream reports?) and the T5.3-T5.7/T5.10 backlog.
+- 2026-09-17: The user confirmed the tag fix ("much better") and both review graphs were removed. No merge-e2e-\* graphs remain. Open: T5.11 (file the upstream reports?) and the T5.3-T5.7/T5.10 backlog.
 - 2026-09-17: Filed the two clean upstream bugs as db-test#1212 and #1213, with the investigation included per the user's preference. Filing notes saved to memory.
 - 2026-09-17: Before filing the last report, fetched `upstream` (note: `origin` is the user's fork and was 9 days stale) and confirmed all three bugs are unchanged on `master` `8e15eeecdf`. Filed db-test#1214. Root cause of trap 17 proven read-only on a copy: 3 of 1,215 `:block/uuid` AVET entries have no entity, so the startup backfill builds `{:db/id nil}`. The user's lock-file theory was checked and ruled out (no lock file, no holder). `Library-Test` stays unopenable on new builds until upstream tolerates stale entries or the file is repaired (T5.15). The probe is `spike/check_orphan_datoms.cljs`.
 - 2026-09-18: Thread recap. Wrote `docs/library-test-investigation.md` as the resume note for T5.15; the next session continues there.
 - 2026-09-18: T5.15 continued, all read-only or on copies.
   - Re-reproduced the failure on the installed CLI `94e1db7-dirty` against a copy, so the copy is a faithful repro environment.
-  - **Origin of the phantom entries found.** They are deletion remnants, not a July regression. `git log -S` shows `fb1047d1f8` *introduced* `ensure-canonical-revisions!`, the code that trips over them — the earlier note had it backwards. The graph's own backups date the entries: 2 present by 2026-01-05, the 3rd (eid 2382, block "Observable objects for UI updates") still a live block on 2026-01-05 and a bare index entry by 2026-01-12, when its page `Mego iOS App Specification` was deleted. Of that page's 166 entities, 165 went cleanly and 1 leaked, so the defect is a rare race in the delete/flush path, not a deterministic one.
+  - **Origin of the phantom entries found.** They are deletion remnants, not a July regression. `git log -S` shows `fb1047d1f8` _introduced_ `ensure-canonical-revisions!`, the code that trips over them — the earlier note had it backwards. The graph's own backups date the entries: 2 present by 2026-01-05, the 3rd (eid 2382, block "Observable objects for UI updates") still a live block on 2026-01-05 and a bare index entry by 2026-01-12, when its page `Mego iOS App Specification` was deleted. Of that page's 166 entities, 165 went cleanly and 1 leaked, so the defect is a rare race in the delete/flush path, not a deterministic one.
   - **Survey of the other in-scope graphs:** `CRM-Simple`, `Bafigo`, `Demo-Graph`, `GTD-02`, `cliworker`, `plugin-test`, `do-sync` are all clean. `Library-Test` is the only affected graph.
   - **`test-rtc` is corrupt at the SQLite level** (`integrity_check`: invalid page number in the `kvs` tree), on the live file as well as a `.backup` copy. Exactly one row is unreadable: `addr 0`, the datascript storage root, so the graph cannot load at all. Untouched, since synced graphs are read-only. Separate from db-test#1214.
   - **Repair proven on a copy:** replaying every `:eavt` datom into a fresh storage-backed conn rebuilds the indexes consistently. The rebuilt graph opens on the current build, and the `[e a v]` fact sets of source and rebuild are identical in both directions. Not applied to the live graph — that needs the user's go-ahead plus a backup.
   - New spike probes: `probe_phantom_context`, `probe_eid_history`, `probe_deleted_page_leak`, `probe_rebuild_diff` and `repair_rebuild_indexes` (the only one that writes, and only ever to a new file).
   - **Repair applied to the live graph** with the user's go-ahead. `logseq graph backup create` is useless here (it starts a worker, so it hits the same error), so the backup was file-level: `db.sqlite` + `db.sqlite-wal` with checksums, at `~/logseq/graph-backups/Library-Test-pre-index-rebuild-20260918T202058Z/`. After the swap the graph opens on the current build: 351 pages, 29 tags, 3 tasks, 1 asset, and 1,212 entities — the pre-repair count. The only data change is the 43 `:block/tx-id` values the startup migration was always meant to backfill.
-  - Worth knowing: a *failed* open still writes to the graph's WAL, so back up `.sqlite` and `.sqlite-wal` together and do it after any failed attempt.
+  - Worth knowing: a _failed_ open still writes to the graph's WAL, so back up `.sqlite` and `.sqlite-wal` together and do it after any failed attempt.
   - The user confirmed `Library-Test` also opens normally in the desktop app, so the repair holds for both the CLI and the app.
   - The user also confirmed `test-rtc` still fails in the app; its worker log shows `database disk image is malformed`, the SQLite-level failure, not the Library-Test one. `sqlite3 .recover` on a copy gets all 2,079 rows back but `addr 0` returns zero-length content, so the live file is unrecoverable. All 12 snapshots in its `backups/` are intact, and the newest (`2026-04-30`) is only nine minutes behind the broken file and opens cleanly on a copy. Restored on 2026-09-18 with the user's go-ahead, after backing up the broken `db.sqlite`/`-wal`/`-shm` and `client-ops-/db.sqlite` to `~/logseq/graph-backups/test-rtc-broken-20260918T204400Z/`. It now opens: 224 pages, 48 tags, 49 tasks, 3 assets, 1,151 entities, `integrity_check` ok, no phantoms. **That restore was then superseded**: sync would not work against a snapshot older than the server's state, so the user deleted the local graph and re-downloaded it. The download is structurally sound but hit a **third, unrelated defect**: it records schema-version 65.33 while migrations 65.23, 65.24 and 65.25 never ran, so the built-ins they add (`deleted-at`, `deleted-by-ref`, `asset/align`, the three `recycle/original-*`) are absent and every AVET scan of them throws — `get-render-snapshots` was returning 500. Repaired 2026-09-18 with the user's go-ahead, after they quit Logseq and with a backup at `~/logseq/graph-backups/test-rtc-pre-migration-rewind-20260918T231901Z/`: rewind `:logseq.kv/schema-version` to 65.22 with `spike/repair_rewind_schema_version.cljs`, reopen, let upstream's own migration code run. Result matches the dry run on a copy — +6 built-ins with `:db/index true`, −1 deprecated `hnsw-label-updated-at`, back to 65.33, integrity ok, 245 pages unchanged. Nothing pushed yet; the migration's writes sit in `pending-local` and go up when the app next opens the graph. **`do-sync` was repaired the same way** later the same day (backup at `~/logseq/graph-backups/do-sync-pre-migration-rewind-20260918T235035Z/`): identical profile, identical result — +6 built-ins, −1 deprecated, back to 65.33, integrity ok, 206 pages unchanged, `pending-local` 12. A sweep over all nine in-scope graphs now shows every one carrying the 65.23/65.24 built-ins and zero phantom index entries. None of the three defects beyond db-test#1214 is reported upstream.

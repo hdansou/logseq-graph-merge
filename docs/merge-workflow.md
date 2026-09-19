@@ -171,11 +171,11 @@ flowchart TD
 
 Examples for one title and parent path:
 
-| Source pages | Result |
-|---|---|
-| `Apple` (G1), `Apple` (G2) | 1 page, G1 blocks then G2 blocks |
-| `Apple #Fruit` (G1), `Apple` (G2) | 1 page `Apple #Fruit`: one tagged cluster, so the untagged page joins it |
-| `Apple` (G1), `Apple #Fruit` (G2) | Same as above; order doesn't matter |
-| `Apple #Company` (G1), `Apple #Fruit` (G2) | 2 pages, kept separate |
-| `Apple #Company` (G1), `Apple #Fruit` (G2), `Apple` (G3) | 3 pages: two tagged clusters, so the untagged page stays on its own |
-| `Apple #Fruit` (G1), `Apple #Fruit #Food` (G2) | 1 page `Apple #Fruit #Food` |
+| Source pages                                             | Result                                                                   |
+| -------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `Apple` (G1), `Apple` (G2)                               | 1 page, G1 blocks then G2 blocks                                         |
+| `Apple #Fruit` (G1), `Apple` (G2)                        | 1 page `Apple #Fruit`: one tagged cluster, so the untagged page joins it |
+| `Apple` (G1), `Apple #Fruit` (G2)                        | Same as above; order doesn't matter                                      |
+| `Apple #Company` (G1), `Apple #Fruit` (G2)               | 2 pages, kept separate                                                   |
+| `Apple #Company` (G1), `Apple #Fruit` (G2), `Apple` (G3) | 3 pages: two tagged clusters, so the untagged page stays on its own      |
+| `Apple #Fruit` (G1), `Apple #Fruit #Food` (G2)           | 1 page `Apple #Fruit #Food`                                              |

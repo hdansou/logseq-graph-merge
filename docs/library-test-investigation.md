@@ -34,17 +34,17 @@ Worker close failed: Cannot store nil as a value at {:db/id nil, :block/tx-id 53
 
 `Library-Test` has **3 index entries with no entity behind them**, so `:db/id` is nil and the transaction throws, killing the worker.
 
-| | Count |
-|---|---|
-| `:block/uuid` datoms in the AVET index | 1,215 |
-| Entities that exist | 1,212 |
-| Index entries whose `d/entity` is nil | 3 |
-| Entities legitimately missing `:block/tx-id` (backfilled fine) | 46 |
+|                                                                | Count |
+| -------------------------------------------------------------- | ----- |
+| `:block/uuid` datoms in the AVET index                         | 1,215 |
+| Entities that exist                                            | 1,212 |
+| Index entries whose `d/entity` is nil                          | 3     |
+| Entities legitimately missing `:block/tx-id` (backfilled fine) | 46    |
 
 The three phantom entries, each with no `:eavt` rows, no `:aevt` rows and **no incoming refs from anywhere in the graph**:
 
-| eid | uuid |
-|---|---|
+| eid  | uuid                                   |
+| ---- | -------------------------------------- |
 | 2120 | `e7a8f0a0-8e11-4aea-b36d-8bbdae54b125` |
 | 2107 | `00de0000-0000-0000-0000-00000000de00` |
 | 2382 | `d5eccfd9-b5a6-4d1e-b17e-423d7a1e66ce` |
@@ -59,16 +59,16 @@ They are **deletion remnants**, and they long predate the code that trips over t
 
 The graph's own backups (`~/logseq/graphs/Library-Test/backups/`, Jan–May 2026, plus `backup/Library-Test-20260522T125344Z`) date the entries:
 
-| Snapshot | uuid index | phantoms |
-|---|---|---|
-| 2026-01-05 | 1,202 | 2 (2107, 2120) |
-| 2026-01-12 | 1,047 | 3 |
-| 2026-02-24 | 1,048 | 3 |
-| 2026-04-20 | 1,052 | 3 |
-| 2026-04-28 | 1,065 | 3 |
-| 2026-05-05 | 1,128 | 3 |
-| 2026-05-22 | 1,201 | 3 |
-| live | 1,215 | 3 |
+| Snapshot   | uuid index | phantoms       |
+| ---------- | ---------- | -------------- |
+| 2026-01-05 | 1,202      | 2 (2107, 2120) |
+| 2026-01-12 | 1,047      | 3              |
+| 2026-02-24 | 1,048      | 3              |
+| 2026-04-20 | 1,052      | 3              |
+| 2026-04-28 | 1,065      | 3              |
+| 2026-05-05 | 1,128      | 3              |
+| 2026-05-22 | 1,201      | 3              |
+| live       | 1,215      | 3              |
 
 Entity **2382 was caught in the act**. In the 2026-01-05 snapshot it is a normal block:
 
@@ -122,7 +122,7 @@ The user approved it. The broken `db.sqlite`, its `-wal`, its `-shm` and `client
 
 The graph opens on the current build: **224 pages, 48 tags, 49 tasks, 3 assets, 1,151 entities**, `integrity_check` → `ok`, zero phantom index entries and zero entities missing `:block/tx-id` after the startup migration ran.
 
-**Sync was deliberately not started.** `logseq sync status` on the restored graph reports `ws-state stopped`, `graph-id -` and **`pending-local 9`** — nine local ops queued in `client-ops-`, which belong to the *newer* state that was lost with the broken file. Pushing those against a snapshot that predates them is the obvious way to make things worse. A remote `test-rtc` does exist (`984149c9-3ff3-432a-be77-ca06cc122597`, role `manager`), so the clean next step is `logseq sync download` into a **separate** graph, compare it with the restored one, and only then decide which becomes the local copy and what to do with the nine pending ops.
+**Sync was deliberately not started.** `logseq sync status` on the restored graph reports `ws-state stopped`, `graph-id -` and **`pending-local 9`** — nine local ops queued in `client-ops-`, which belong to the _newer_ state that was lost with the broken file. Pushing those against a snapshot that predates them is the obvious way to make things worse. A remote `test-rtc` does exist (`984149c9-3ff3-432a-be77-ca06cc122597`, role `manager`), so the clean next step is `logseq sync download` into a **separate** graph, compare it with the restored one, and only then decide which becomes the local copy and what to do with the nine pending ops.
 
 ### Superseded: the restore would not sync
 
@@ -145,11 +145,11 @@ The re-downloaded `test-rtc` still threw, with an error unlike either of the oth
 
 **The graph claimed schema-version 65.33 while three migrations had never run.** From `src/main/frontend/worker/db/migrate.cljs`:
 
-| Migration | Declares | State in the download |
-|---|---|---|
-| 65.23 | `:logseq.property.asset/align` | missing |
-| 65.24 | `deleted-at`, `deleted-by-ref`, `recycle/original-parent`, `original-page`, `original-order` | all 5 missing |
-| 65.25 | deletes `:logseq.property.embedding/hnsw-label-updated-at` | still present |
+| Migration | Declares                                                                                     | State in the download |
+| --------- | -------------------------------------------------------------------------------------------- | --------------------- |
+| 65.23     | `:logseq.property.asset/align`                                                               | missing               |
+| 65.24     | `deleted-at`, `deleted-by-ref`, `recycle/original-parent`, `original-page`, `original-order` | all 5 missing         |
+| 65.25     | deletes `:logseq.property.embedding/hnsw-label-updated-at`                                   | still present         |
 
 Every built-in property is created through `sqlite-util/build-property`, which always sets `:db/index true`, so this is not a property that was built wrong — it was never built at all.
 
@@ -205,7 +205,7 @@ The user approved it. What was done, in order:
 5. Installed it: removed the live `db.sqlite-wal`, copied the rebuilt file in as `db.sqlite.new` and renamed it into place, so the database and its WAL could never be mismatched.
 6. Verified against the live graph: `list page` → 351, `list tag` → 29, `list task` → 3, `list asset` → 1, and `[:find (count ?e) :where [?e :block/uuid]]` → **1,212**, the pre-repair entity count. Worker stopped cleanly afterwards.
 
-Note for anyone repeating this: a *failed* open still writes to the graph's WAL. The first `graph backup create` attempt grew `db.sqlite-wal` from 8.2 KB to 16 KB before the worker died, so back up the `.sqlite` and `.sqlite-wal` together, after any failed attempt, not before.
+Note for anyone repeating this: a _failed_ open still writes to the graph's WAL. The first `graph backup create` attempt grew `db.sqlite-wal` from 8.2 KB to 16 KB before the worker died, so back up the `.sqlite` and `.sqlite-wal` together, after any failed attempt, not before.
 
 **Rollback:** restore both files from `~/logseq/graph-backups/Library-Test-pre-index-rebuild-20260918T202058Z/` and delete any `db.sqlite-wal`/`db.sqlite-shm` alongside the restored file.
 
@@ -222,18 +222,18 @@ pnpm exec nbb-logseq -cp src spike/check_orphan_datoms.cljs /tmp/libtest/graphs 
 
 The probes, all read-only unless stated:
 
-| Script | What it answers |
-|---|---|
-| `spike/check_orphan_datoms.cljs` | counts, the phantom entries, `max-tx` |
-| `spike/probe_phantom_context.cljs` | incoming refs to the phantoms, nearest real entities by eid (dates them) |
-| `spike/probe_eid_history.cljs` | what given eids looked like in a given snapshot |
-| `spike/probe_deleted_page_leak.cljs` | of a page's entities in an old snapshot, how many leaked index entries in a newer one |
-| `spike/repair_rebuild_indexes.cljs` | **writes a new file**: index-rebuild repair |
-| `spike/probe_rebuild_diff.cljs` | `[e a v]` diff between two graphs |
-| `spike/probe_attr_index_flags.cljs` | whether a graph's stored schema marks given attributes `:db/index true` |
-| `spike/probe_schema_version.cljs` | a graph's stored schema-version kv entries |
-| `spike/probe_ident_diff.cljs` | `:db/ident` entities one graph has and another lacks |
-| `spike/repair_rewind_schema_version.cljs` | **writes in place**: rewind the schema version so migrations re-run |
+| Script                                    | What it answers                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| `spike/check_orphan_datoms.cljs`          | counts, the phantom entries, `max-tx`                                                 |
+| `spike/probe_phantom_context.cljs`        | incoming refs to the phantoms, nearest real entities by eid (dates them)              |
+| `spike/probe_eid_history.cljs`            | what given eids looked like in a given snapshot                                       |
+| `spike/probe_deleted_page_leak.cljs`      | of a page's entities in an old snapshot, how many leaked index entries in a newer one |
+| `spike/repair_rebuild_indexes.cljs`       | **writes a new file**: index-rebuild repair                                           |
+| `spike/probe_rebuild_diff.cljs`           | `[e a v]` diff between two graphs                                                     |
+| `spike/probe_attr_index_flags.cljs`       | whether a graph's stored schema marks given attributes `:db/index true`               |
+| `spike/probe_schema_version.cljs`         | a graph's stored schema-version kv entries                                            |
+| `spike/probe_ident_diff.cljs`             | `:db/ident` entities one graph has and another lacks                                  |
+| `spike/repair_rewind_schema_version.cljs` | **writes in place**: rewind the schema version so migrations re-run                   |
 
 They need `better-sqlite3`, which is symlinked into this project's `node_modules` from `../logseq/deps/db/node_modules`; recreate that symlink if it is missing. A graphs dir laid out as `<root>/graphs/<name>/db.sqlite` can also be driven by the CLI with `logseq --root-dir <root>`, which is how the failure and the repair were checked end to end.
 
