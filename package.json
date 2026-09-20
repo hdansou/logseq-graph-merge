@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
-    "@logseq/nbb-logseq": "git+https://github.com/logseq/nbb-logseq.git#feat-db-v34"
+    "@logseq/nbb-logseq": "git+https://github.com/logseq/nbb-logseq.git#4d9f1382ce2cec6f39bf12df49ba425f1bd5f3fb"
   },
   "scripts": {
     "test": "nbb-logseq -cp test -m nextjournal.test-runner",

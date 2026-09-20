@@ -9,7 +9,7 @@ importers:
   .:
     devDependencies:
       '@logseq/nbb-logseq':
-        specifier: git+https://github.com/logseq/nbb-logseq.git#feat-db-v34
+        specifier: git+https://github.com/logseq/nbb-logseq.git#4d9f1382ce2cec6f39bf12df49ba425f1bd5f3fb
         version: https://codeload.github.com/logseq/nbb-logseq/tar.gz/4d9f1382ce2cec6f39bf12df49ba425f1bd5f3fb
 
 packages:

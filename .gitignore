@@ -3,3 +3,10 @@ node_modules/
 .cpcache/
 spike/out/
 out/
+
+# Editor, OS and agent scratch
+.DS_Store
+.claude/
+*.local
+*.local.*
+tmp/
