@@ -73,13 +73,13 @@ The graph's own backups (`~/logseq/graphs/Library-Test/backups/`, Jan–May 2026
 Entity **2382 was caught in the act**. In the 2026-01-05 snapshot it is a normal block:
 
 ```clojure
-{:block/title "Observable objects for UI updates"
+{:block/title "<a block title, redacted>"
  :block/page 2293 :block/parent 2293
  :block/created-at 1765747884433   ; 2025-12-14
  :block/tx-id 536884370 …}
 ```
 
-By 2026-01-12 all of its `:eavt` datoms are gone but its `:block/uuid` AVET entry remains. Its page, 2293 (`Mego iOS App Specification`), was deleted in the same window — and that page's own uuid entry was removed correctly. Of the page's **166 entities, 165 were deleted cleanly and 1 leaked an index entry**:
+By 2026-01-12 all of its `:eavt` datoms are gone but its `:block/uuid` AVET entry remains. Its page, 2293 (title redacted), was deleted in the same window — and that page's own uuid entry was removed correctly. Of the page's **166 entities, 165 were deleted cleanly and 1 leaked an index entry**:
 
 ```clojure
 {:members 166 :counts {:gone-cleanly 165 :stale-index-entry 1} :stale [2382]}
@@ -122,7 +122,7 @@ The user approved it. The broken `db.sqlite`, its `-wal`, its `-shm` and `client
 
 The graph opens on the current build: **224 pages, 48 tags, 49 tasks, 3 assets, 1,151 entities**, `integrity_check` → `ok`, zero phantom index entries and zero entities missing `:block/tx-id` after the startup migration ran.
 
-**Sync was deliberately not started.** `logseq sync status` on the restored graph reports `ws-state stopped`, `graph-id -` and **`pending-local 9`** — nine local ops queued in `client-ops-`, which belong to the _newer_ state that was lost with the broken file. Pushing those against a snapshot that predates them is the obvious way to make things worse. A remote `test-rtc` does exist (`984149c9-3ff3-432a-be77-ca06cc122597`, role `manager`), so the clean next step is `logseq sync download` into a **separate** graph, compare it with the restored one, and only then decide which becomes the local copy and what to do with the nine pending ops.
+**Sync was deliberately not started.** `logseq sync status` on the restored graph reports `ws-state stopped`, `graph-id -` and **`pending-local 9`** — nine local ops queued in `client-ops-`, which belong to the _newer_ state that was lost with the broken file. Pushing those against a snapshot that predates them is the obvious way to make things worse. A remote `test-rtc` does exist, with this account as `manager`, so the clean next step is `logseq sync download` into a **separate** graph, compare it with the restored one, and only then decide which becomes the local copy and what to do with the nine pending ops.
 
 ### Superseded: the restore would not sync
 
