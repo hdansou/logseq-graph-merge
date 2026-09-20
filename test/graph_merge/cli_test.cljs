@@ -28,4 +28,17 @@
   (is (= {:error "--config-from must be one of the sources, got \"C\""}
          (cli/parse-args ["--sources" "A,B" "--dest" "d" "--config-from" "C"])))
   (is (= {:error "Unknown option: --force"}
-         (cli/parse-args ["--sources" "A" "--dest" "d" "--force"]))))
+         (cli/parse-args ["--sources" "A" "--dest" "d" "--force"])))
+  (testing "a graph listed twice would be merged with itself"
+    (is (= {:error "--sources must not repeat a graph, but \"A\" is listed twice"}
+           (cli/parse-args ["--sources" "A,B,A" "--dest" "d"]))))
+  (testing "a flag swallowed as a value hides the argument after it"
+    (is (= {:error "--sources needs a value, got the option \"--dest\""}
+           (cli/parse-args ["--sources" "--dest" "d"])))
+    (is (= {:error "--dest needs a value, got the option \"--dry-run\""}
+           (cli/parse-args ["--sources" "A" "--dest" "--dry-run"])))
+    (is (= {:error "--out needs a value, got the option \"--root-dir\""}
+           (cli/parse-args ["--sources" "A" "--dest" "d" "--out" "--root-dir" "/r"])))
+    (testing "but a missing trailing value still reports what is required"
+      (is (= {:error "--dest is required: the name of the new graph to create"}
+             (cli/parse-args ["--sources" "A" "--dest"]))))))
