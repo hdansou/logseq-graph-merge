@@ -49,7 +49,7 @@ The same report is written to `out/<dest>/report.edn`. The tool stops before wri
 - [docs/requirements.md](docs/requirements.md): requirements, traps found in Logseq, options, spike results and the decisions log
 - [docs/merge-workflow.md](docs/merge-workflow.md): workflow diagrams (source of truth for the [rendered page](https://claude.ai/code/artifact/fc366529-6a4c-49da-a996-85be42363d14))
 - [docs/TASKS.md](docs/TASKS.md): task tracker and progress log
-- [docs/library-test-investigation.md](docs/library-test-investigation.md): open Logseq-side investigation (a graph that current builds can't open, db-test#1214)
+- [docs/library-test-investigation.md](docs/library-test-investigation.md): Logseq-side investigation. Three defects found in local graphs and repaired (stale `:block/uuid` index entries, db-test#1214; a corrupt `db.sqlite`; RTC downloads recording a schema version whose migrations never ran). The upstream defects are still open.
 
 ## Layout
 
@@ -60,7 +60,8 @@ The same report is written to `out/<dest>/report.edn`. The tool stops before wri
 | `src/graph_merge/stage/`                      | One namespace per planner stage (normalize, values, uuids, ontology, idents, assets, pages, refs, review, emit) |
 | `src/graph_merge/{cli,io,logseq,verify}.cljs` | Arguments, files, the `logseq` CLI wrapper, pre- and post-write checks                                          |
 | `test/`                                       | Tests, written first (TDD)                                                                                      |
-| `spike/`                                      | Throwaway probes and fixtures from the T3 spike                                                                 |
+| `spike/probe_*.cljs`, `spike/check_*.cljs`    | Read-only probes, plus the T3 spike fixtures                                                                    |
+| `spike/repair_*.cljs`                         | **Repairs that write to real graphs.** Run them on a copy first; `repair_rewind_schema_version` writes in place |
 | `scripts/build_workflow_page.py`              | Rebuilds the workflow page from the Mermaid in `docs/merge-workflow.md`                                         |
 
 ## Development
@@ -71,9 +72,14 @@ Requirements:
 - the logseq repo checked out next to this one (`../logseq`), because `nbb.edn` depends on `../logseq/deps/db` and reuses Logseq's own export/import and validation code
 
 ```sh
-pnpm install   # installs @logseq/nbb-logseq (same git ref as logseq/deps/db)
+pnpm install   # installs @logseq/nbb-logseq, pinned to a commit (see below)
 pnpm test      # runs every *-test namespace under test/
 ```
+
+`@logseq/nbb-logseq` is pinned to the exact commit `4d9f1382`, not to the `feat-db-v34`
+branch that `logseq/deps/db` tracks, so an install can't silently pick up a moved branch.
+The two still have to agree: when `deps/db` moves to a newer nbb-logseq, re-sync
+deliberately with the sha its own lockfile resolves to, then re-run `pnpm test`.
 
 `validate-export` logs rejected maps to the console, so tests that check rejection print error noise. That noise is expected; the pass/fail summary at the end is what counts.
 

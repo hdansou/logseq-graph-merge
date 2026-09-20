@@ -61,7 +61,7 @@ The user approved the stack on 2026-09-13 (requirements §4, Option B):
 - `cliworker`, `do-sync` and `test-rtc` are synced, so they are read-only.
 - Creating any destination graph needs the user's confirmation first.
 
-Setup is copied from `logseq/deps/db`, not invented: same `@logseq/nbb-logseq` git ref, `nbb.edn` `:local/root` dependency, and `nextjournal.test-runner`.
+Setup is copied from `logseq/deps/db`, not invented: the same `@logseq/nbb-logseq`, `nbb.edn` `:local/root` dependency, and `nextjournal.test-runner`. (Since T6.7 the dependency is pinned to a commit rather than to `deps/db`'s `feat-db-v34` branch; see the README for how to re-sync.)
 
 - [x] T4.1 Scaffold: `nbb.edn`/`package.json`, test runner, and README with dev commands.
   - The smoke test was red (missing namespace), then green.
@@ -232,6 +232,23 @@ Open:
 - [x] T5.15 `Library-Test` opens again on current builds. The 3 phantom `:block/uuid` index entries were deletion remnants dating back to 2025; the index rebuild was applied to the live graph on 2026-09-18 with the user's go-ahead, after a file-level backup. See [library-test-investigation.md](library-test-investigation.md) for the full record and rollback path.
   - Still open, parked by the user: adding the new evidence to db-test#1214, and reporting `test-rtc`'s SQLite-level corruption upstream (a separate bug; the graph itself was restored from a backup on 2026-09-18, but its sync is deliberately still stopped).
 
+## T6 Production-readiness pass (2026-09-19)
+
+An audit before letting anyone else run the tool. Baseline was already green: `pnpm audit` clean, 81 tests / 207 assertions passing, tree clean, no secrets, `spawnSync` takes an argv array so graph names can't be injected, and the generated workflow page regenerates byte-identical. Categories A (DRY/KISS/YAGNI) and B (larger refactors) produced no findings — nothing over 213 lines and no structural duplication across the stage namespaces.
+
+- [x] T6.1 Reject duplicate `--sources` (V1). `--sources "A,A"` currently merges a graph with itself; `preflight!` only checks existence, never distinctness. Test first.
+- [x] T6.2 Reject a flag used as an option value (V2). `--sources --dest foo` sets sources to `["--dest"]` and swallows `foo`; it fails safe but the message misleads. Test first.
+- [x] T6.3 README: `spike/` is described as "throwaway probes" but now holds two repair scripts that write to real graphs, one in place (C1). Safety-relevant.
+- [x] T6.4 README: the investigation link still calls Library-Test unopenable (C2).
+- [x] T6.5 Getting started: the Library-Test troubleshooting row still says to leave the graph out (C3).
+- [x] T6.6 Document recovery from a partial write (C4): if the import succeeds and the asset copy fails, the destination exists half-built and a re-run is blocked by preflight.
+- [x] T6.7 Pin `@logseq/nbb-logseq` to its resolved sha instead of the `feat-db-v34` branch (D2). The lockfile already pins it, so this only closes the silent-re-resolve hole.
+- [x] T6.8 `.gitignore`: add `.DS_Store`, `.claude/`, `*.local*` (E2). Nothing stray today; cheap insurance.
+
+Deferred, both needing a decision about the `../logseq` sibling checkout:
+- [ ] T6.9 `nbb.edn` depends on `../logseq/deps/db` via `:local/root`, an unpinned sibling checkout (D1). Traps 15 and 18 were both build drift. A `:local/root` can't be pinned, so the options are recording the expected revision and printing it in preflight, or something stronger.
+- [ ] T6.10 No CI (E1). The 81-test suite gates nothing. A workflow needs the `../logseq` checkout too, so this depends on T6.9.
+
 Known limits (by design, not started; decide before building):
 
 - [ ] T5.3 Idents inside query text are reported (`idents-in-text`), not rewritten (R8).
@@ -274,6 +291,11 @@ Known limits (by design, not started; decide before building):
 - 2026-09-17: Filed the two clean upstream bugs as db-test#1212 and #1213, with the investigation included per the user's preference. Filing notes saved to memory.
 - 2026-09-17: Before filing the last report, fetched `upstream` (note: `origin` is the user's fork and was 9 days stale) and confirmed all three bugs are unchanged on `master` `8e15eeecdf`. Filed db-test#1214. Root cause of trap 17 proven read-only on a copy: 3 of 1,215 `:block/uuid` AVET entries have no entity, so the startup backfill builds `{:db/id nil}`. The user's lock-file theory was checked and ruled out (no lock file, no holder). `Library-Test` stays unopenable on new builds until upstream tolerates stale entries or the file is repaired (T5.15). The probe is `spike/check_orphan_datoms.cljs`.
 - 2026-09-18: Thread recap. Wrote `docs/library-test-investigation.md` as the resume note for T5.15; the next session continues there.
+- 2026-09-19: T6 production-readiness pass. Baseline was already green (`pnpm audit` clean, 81 tests passing, clean tree, no secrets, no shell injection — `spawnSync` takes an argv array — and the generated workflow page regenerates byte-identical). Categories A and B produced nothing: no file over 213 lines, no structural duplication worth extracting.
+  - T6.1/T6.2 built test-first: `--sources "A,A"` would have merged a graph with itself, and `--sources --dest d` silently swallowed the next argument. Both now fail with a message naming the problem. 81 tests / 212 assertions.
+  - T6.3-T6.6 were documentation drift, one of it safety-relevant: `spike/` was still described as "throwaway probes" after two repair scripts that write to real graphs landed in it.
+  - T6.7 pinned `@logseq/nbb-logseq` to commit `4d9f1382`; only the lockfile's specifier line changed and the resolved tarball is identical.
+  - T6.9 (the unpinned `../logseq` sibling checkout) and T6.10 (no CI) are deferred; they need one decision between them.
 - 2026-09-18: T5.15 continued, all read-only or on copies.
   - Re-reproduced the failure on the installed CLI `94e1db7-dirty` against a copy, so the copy is a faithful repro environment.
   - **Origin of the phantom entries found.** They are deletion remnants, not a July regression. `git log -S` shows `fb1047d1f8` _introduced_ `ensure-canonical-revisions!`, the code that trips over them — the earlier note had it backwards. The graph's own backups date the entries: 2 present by 2026-01-05, the 3rd (eid 2382, block "Observable objects for UI updates") still a live block on 2026-01-05 and a bare index entry by 2026-01-12, when its page `Mego iOS App Specification` was deleted. Of that page's 166 entities, 165 went cleanly and 1 leaked, so the defect is a rare race in the delete/flush path, not a deterministic one.
