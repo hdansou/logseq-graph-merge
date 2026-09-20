@@ -115,7 +115,7 @@ No graph-merge, page-merge or "import graph into graph" feature exists. The old 
 Then recover the uuids the export dropped (traps 4 and 9):
 
 - **Pages** the export kept a uuid for are matched by that uuid. This includes tag and property pages, which are exported as `{:block/uuid …}` with no title.
-- **All other pages** match by (`:block/title`, `:block/created-at`). This pair was unique for every page in `Library-Test`, `Demo-Graph`, `CRM-Simple` and `Bafigo`. If a pair is ambiguous or has no match, abort and list the pages.
+- **All other pages** match by (`:block/title`, `:block/created-at`). This pair was unique for every page in `Library-Test`, `Demo-Graph`, `CRM-Simple` and one further graph. If a pair is ambiguous or has no match, abort and list the pages.
 - **Built-in pages** take Logseq's deterministic `(common-uuid/gen-uuid :builtin-block-uuid title)`, so they line up with the destination's own built-ins.
 - **Deleted pages** are exported with `:logseq.property/deleted-at` and are skipped. Deleted blocks are not exported at all.
 - **Assets** match by checksum.
@@ -340,7 +340,7 @@ Also confirmed live:
 | Determinism                         | Same content (titles, tree, order, properties, tags, refs, assets). Uuids of unreferenced blocks may vary.                                                                                          |
 | Home                                | Personal dev tool in `~/Projects/src/github.com/logseq-graph-merge`.                                                                                                                                |
 | Recommended approach                | Option B, the EDN pipeline via the CLI.                                                                                                                                                             |
-| Development graph scope             | Only CRM-Simple, Bafigo, Library-Test, Demo-Graph, GTD-02, cliworker, plugin-test, do-sync and test-rtc. Synced graphs are read-only. Destinations are throwaway `merge-e2e-NN` graphs.             |
+| Development graph scope             | Only CRM-Simple, Library-Test, Demo-Graph, GTD-02, cliworker, plugin-test, do-sync, test-rtc and one further local graph (name redacted). Synced graphs are read-only. Destinations are throwaway `merge-e2e-NN` graphs.             |
 | First end-to-end sources            | CRM-Simple, GTD-02, Library-Test, Demo-Graph, plugin-test (in that order)                                                                                                                           |
 | Values the importer rejects         | Empty number values are dropped; invalid built-in choices become a `"Property: value"` child note (R2b)                                                                                             |
 | References to deleted pages         | A child note `"<property>: <title> (deleted page)"`; text links become the plain title (R2b)                                                                                                        |

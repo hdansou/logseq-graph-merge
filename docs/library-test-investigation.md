@@ -91,7 +91,7 @@ The other two phantoms sit between entities created at 2025-10-11T02:30:51Z and 
 
 ## Other in-scope graphs (answered 2026-09-18)
 
-Probed on copies: `CRM-Simple`, `Bafigo`, `Demo-Graph`, `GTD-02`, `cliworker`, `plugin-test`, `do-sync` — **all clean**, zero phantom entries and zero entities missing `:block/tx-id`. `Library-Test` is the only affected graph.
+Probed on copies: `CRM-Simple`, `Demo-Graph`, `GTD-02`, `cliworker`, `plugin-test`, `do-sync` and one further local graph — **all clean**, zero phantom entries and zero entities missing `:block/tx-id`. `Library-Test` is the only affected graph.
 
 `test-rtc` could not be probed, for an unrelated and more serious reason: **its `db.sqlite` is corrupt at the SQLite level**, on the live file as well as on a `.backup` copy, with or without the WAL replayed.
 
@@ -153,7 +153,7 @@ The re-downloaded `test-rtc` still threw, with an error unlike either of the oth
 
 Every built-in property is created through `sqlite-util/build-property`, which always sets `:db/index true`, so this is not a property that was built wrong — it was never built at all.
 
-**`do-sync` has the identical defect**, and it is the other RTC graph. `cliworker` and all six local graphs (`CRM-Simple`, `Bafigo`, `Demo-Graph`, `GTD-02`, `plugin-test`, `Library-Test`) are correct. That points at the sync/download path writing the current schema-version without running the migrations that go with it.
+**`do-sync` has the identical defect**, and it is the other RTC graph. `cliworker` and all six local graphs (`CRM-Simple`, `Demo-Graph`, `GTD-02`, `plugin-test`, `Library-Test` and one further) are correct. That points at the sync/download path writing the current schema-version without running the migrations that go with it.
 
 #### Repair: rewind the schema version and let upstream migrate
 

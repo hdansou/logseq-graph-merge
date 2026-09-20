@@ -57,7 +57,7 @@ The user approved the stack on 2026-09-13 (requirements §4, Option B):
 
 **Graph scope for development (set by the user, 2026-09-13):**
 
-- Only `CRM-Simple`, `Bafigo`, `Library-Test`, `Demo-Graph`, `GTD-02`, `cliworker`, `plugin-test`, `do-sync` and `test-rtc` may be exported, queried or otherwise used.
+- Only `CRM-Simple`, `Library-Test`, `Demo-Graph`, `GTD-02`, `cliworker`, `plugin-test`, `do-sync`, `test-rtc` and one further local graph (name redacted) may be exported, queried or otherwise used.
 - `cliworker`, `do-sync` and `test-rtc` are synced, so they are read-only.
 - Creating any destination graph needs the user's confirmation first.
 
@@ -81,7 +81,7 @@ Setup is copied from `logseq/deps/db`, not invented: the same `@logseq/nbb-logse
   - [x] compatible same-title properties (case- and space-insensitive) map to the first source's ident
   - [x] a type or cardinality mismatch renames the later property to `"title (graph)"` with an ident built by Logseq's `normalize-ident-name-part`, and is reported
   - [x] closed values are unioned by value, first source's order first; matching later closed-value uuids map to the canonical ones (`:uuid-map`)
-  - [x] closed values with a blank `:value` never merge (real case: `Bafigo`'s `Effort` has several)
+  - [x] closed values with a blank `:value` never merge (real case: one source's `Effort` has several)
   - [x] other schema differences keep the first source's value and are reported
   - [x] Real-data check (`spike/check_ontology.cljs`, 4 graphs): 31 definitions became 29 merged, with no renames, no untitled definitions, and 1 reported difference
 - [x] T4.6 S4 class unification (R4), in the same namespace; 3 tests, red first. The property and class diffs share one `schema-diff` (DRY).
@@ -123,7 +123,7 @@ Setup is copied from `logseq/deps/db`, not invented: the same `@logseq/nbb-logse
   - [x] integration test: two sources shaped like the real exports (closed values in both, a shared tag, the same journal day, a Library child, a cross-page `[[uuid]]` ref). The result **passes Logseq's `validate-export`**, and the same input gives byte-identical `pr-str` output (D1).
   - [x] the smoke test changed: merging no sources now yields just the Graph Merge page
   - Test-data lesson: `#uuid` accepts non-hex text such as `…acme`, but real uuids are hex and the uuid-text regex rightly ignores anything else. Fixtures must use hex.
-- [x] T4.12b Real-data integration check (`spike/check_plan.cljs`): the full planner over CRM-Simple, Bafigo, Library-Test and Demo-Graph exports with live identity rows, then Logseq's `validate-export`. It found 3 defects, each fixed test-first after reproducing it in `plan_test`:
+- [x] T4.12b Real-data integration check (`spike/check_plan.cljs`): the full planner over CRM-Simple, Library-Test, Demo-Graph and one further graph's exports with live identity rows, then Logseq's `validate-export`. It found 3 defects, each fixed test-first after reproducing it in `plan_test`:
   - [x] report block counts were always 0 (`tree-seq` applied to a seq instead of each block)
   - [x] `validate-export` crashed ("Cannot read properties of null (reading 'charAt')"). S1 had added `:build/keep-uuid?` to title-less tag/property page entries, which makes sqlite.build create a new page with no name. Those entries are now left exactly as exported.
   - [x] Demo-Graph's user page `Card` landed on the built-in `#Card` tag, because import matches titles exactly. The **raw Demo-Graph export fails `validate-export` on its own, with 6 errors**, so this is an existing Logseq issue. S7e now sends a top-level page titled exactly like a built-in tag or property to that built-in's page (R4), using Logseq's `built-in-classes`/`built-in-properties` titles.
@@ -273,8 +273,8 @@ Known limits (by design, not started; decide before building):
     - `#transit/time` tagged values in the export, noted for the I/O reader.
   - The same run confirmed 158 page-parent links that a plain export would lose.
 - 2026-09-13: T4.4–T4.6 done: S2 uuid re-keying, S3 property unification and S4 class unification, all test-first (24 tests, 64 assertions).
-  - Real exports shaped two S3 tests: closed values `{:value :uuid}` referenced as `[:block/uuid u]`, and `Bafigo`'s blank closed values, which must never merge.
-  - Real-data runs over CRM-Simple, Bafigo, Library-Test and Demo-Graph: 31 properties became 29 and 21 classes became 16, with no renames or cycles.
+  - Real exports shaped two S3 tests: closed values `{:value :uuid}` referenced as `[:block/uuid u]`, and another source's blank closed values, which must never merge.
+  - Real-data runs over CRM-Simple, Library-Test, Demo-Graph and one further graph: 31 properties became 29 and 21 classes became 16, with no renames or cycles.
 - 2026-09-13: T4.7–T4.12 done: S5 idents, S6 assets, S3/S4 definition uuids, S7 pages (16 tests), S8 refs, S9 review page, S10 emit, and `plan` composition with a determinism test. The pure planner is feature-complete: 60 tests, 163 assertions.
 - 2026-09-13: T4.12b: first end-to-end planner run on 4 real graphs, gated by Logseq's `validate-export`. It exposed 3 defects the fixtures had missed (block counts, a title-less page crash, a built-in title collision), plus an unreported favorites dedupe. Each was reproduced in a test first, then fixed. The merged export now validates. The raw Demo-Graph export fails validation on its own (6 errors), and the merge resolves those. Next: T4.13/T4.14, the CLI and I/O shell.
 - 2026-09-13: The user limited development to 9 graphs and allowed throwaway `merge-e2e-NN` destinations. T4.13/T4.14 CLI and I/O shell built (pure helpers test-first).
@@ -299,7 +299,7 @@ Known limits (by design, not started; decide before building):
 - 2026-09-18: T5.15 continued, all read-only or on copies.
   - Re-reproduced the failure on the installed CLI `94e1db7-dirty` against a copy, so the copy is a faithful repro environment.
   - **Origin of the phantom entries found.** They are deletion remnants, not a July regression. `git log -S` shows `fb1047d1f8` _introduced_ `ensure-canonical-revisions!`, the code that trips over them — the earlier note had it backwards. The graph's own backups date the entries: 2 present by 2026-01-05, the 3rd (eid 2382, a normal content block) still a live block on 2026-01-05 and a bare index entry by 2026-01-12, when its page was deleted. Of that page's 166 entities, 165 went cleanly and 1 leaked, so the defect is a rare race in the delete/flush path, not a deterministic one.
-  - **Survey of the other in-scope graphs:** `CRM-Simple`, `Bafigo`, `Demo-Graph`, `GTD-02`, `cliworker`, `plugin-test`, `do-sync` are all clean. `Library-Test` is the only affected graph.
+  - **Survey of the other in-scope graphs:** `CRM-Simple`, `Demo-Graph`, `GTD-02`, `cliworker`, `plugin-test`, `do-sync` and one further local graph are all clean. `Library-Test` is the only affected graph.
   - **`test-rtc` is corrupt at the SQLite level** (`integrity_check`: invalid page number in the `kvs` tree), on the live file as well as a `.backup` copy. Exactly one row is unreadable: `addr 0`, the datascript storage root, so the graph cannot load at all. Untouched, since synced graphs are read-only. Separate from db-test#1214.
   - **Repair proven on a copy:** replaying every `:eavt` datom into a fresh storage-backed conn rebuilds the indexes consistently. The rebuilt graph opens on the current build, and the `[e a v]` fact sets of source and rebuild are identical in both directions. Not applied to the live graph — that needs the user's go-ahead plus a backup.
   - New spike probes: `probe_phantom_context`, `probe_eid_history`, `probe_deleted_page_leak`, `probe_rebuild_diff` and `repair_rebuild_indexes` (the only one that writes, and only ever to a new file).
