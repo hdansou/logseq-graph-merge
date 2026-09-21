@@ -19,7 +19,7 @@
                                :build/properties {:user.property/undefined "x"}}]}]}]
       (is (some? (:error (sqlite-export/validate-export invalid)))))))
 
-;; Two sources shaped like the real CRM-Simple / Bafigo / Library-Test exports.
+;; Two sources shaped like the real CRM-Simple / Library-Test exports.
 
 (def library (common-uuid/gen-uuid :builtin-block-uuid "Library"))
 (def todo-a #uuid "a0000000-0000-4000-8000-0000000000a1")

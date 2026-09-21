@@ -45,7 +45,7 @@
         (merge-pages [(src "A" (f/built-in-page "$$$favorites" :blocks [(fav target)]))
                       (src "B" (f/built-in-page "$$$favorites" :blocks [(fav target) (fav other)]))])]
     (is (= [(fav target) (fav other)] (:blocks favorites)))
-    (testing "dropped duplicates are reported, so block counts reconcile (real case: Bafigo and Library-Test both favorite Library)"
+    (testing "dropped duplicates are reported, so block counts reconcile (real case: Library-Test and another source both favorite Library)"
       (is (= [[:block/uuid target]] favorite-dedupes)))))
 
 (deftest tag-and-property-page-entries-follow-the-merged-definition

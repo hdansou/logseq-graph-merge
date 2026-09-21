@@ -64,7 +64,7 @@
       (is (= {doing-b doing-a} uuid-map)))))
 
 (deftest blank-closed-values-never-merge
-  (testing "Bafigo's Effort property has several closed values with an empty :value"
+  (testing "a real source's Effort property has several closed values with an empty :value"
     (let [u1 #uuid "a0000000-0000-4000-8000-000000000001"
           u2 #uuid "b0000000-0000-4000-8000-000000000002"
           {:keys [properties uuid-map]}
@@ -99,7 +99,7 @@
              (get-in properties [:user.property/p-a :block/uuid]))))))
 
 (deftest same-title-classes-unify-and-union-their-properties-and-parents
-  (testing "shapes follow CRM-Simple/Bafigo: company in both, Bafigo's vendor extends company"
+  (testing "shapes follow two real sources: company in both, one source's vendor extends company"
     (let [{:keys [classes ident-maps]}
           (ontology/unify-classes
            [(class-src "A" {:user.class/company-a {:block/title "company"
